@@ -33,6 +33,15 @@
     },
     "llm_client": "real LLM (Anthropic-compatible) + deterministic mock fallback"
   },
+  "docs": {
+    "files": [
+      "README.md",
+      "METHODS_TREE_INTRO.md",
+      "FEATURES.md",
+      "BUILD.md",
+      "CHANGELOG.md"
+    ]
+  },
   "tests": {
     "total": 307,
     "files": [

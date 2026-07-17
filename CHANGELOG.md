@@ -6,6 +6,7 @@ Wiki method-tree classification: tag every entry with the L0 modes / L1 recipes 
 
 ### Added
 
+- `BUILD.md` — complete engineering development manual. Follow the 12 parts to rebuild the project from scratch (~5h, 307 tests pass).
 - `wiki_store.write_dialogue/write_entity/write_topic` accept classification kwargs (`modes`, `l1_recipes`, `roles`, `failure_categories`).
 - `.frontmatter_cache.json` — O(1) classification lookups, auto-maintained.
 - 4 new query APIs:
