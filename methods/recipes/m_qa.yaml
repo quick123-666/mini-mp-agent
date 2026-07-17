@@ -1,0 +1,12 @@
+node_id: m_qa
+name: Q&A mode
+level: 0
+purpose: Single LLM call to answer a question with no iteration.
+inputs: ["task (str)"]
+outputs: ["answer (str)"]
+dependencies: []
+failure_modes: ["ambiguous_question", "out_of_knowledge"]
+agent_role: dispatcher
+selector_keywords: ["what", "how", "why", "explain", "解释", "什么是", "怎么", "为什么"]
+maturity: stable
+evidence: tests/test_mode_router.py

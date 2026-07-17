@@ -1,0 +1,12 @@
+node_id: plan_task
+name: Plan Task
+level: 1
+purpose: Produce a structured execution plan with dependency ordering and parallel flags.
+inputs: ["decomposed_steps (list)", "method_tree (MethodsTree)"]
+outputs: ["plan (Plan)", "plan_steps (list[PlanStep])"]
+dependencies: ["decompose_task", "extract_entities"]
+failure_modes: ["circular_dependency", "missing_method"]
+agent_role: planner
+selector_keywords: ["plan", "prepare", "安排", "规划"]
+maturity: stable
+evidence: tests/test_methods_tree.py

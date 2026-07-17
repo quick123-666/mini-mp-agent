@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "schema": "mini-mp-agent-methods/v1",
+  "updated": "2026-07-18",
+  "total_methods": 15,
+  "levels": {
+    "L0": {"label": "mode entry", "count": 5},
+    "L1": {"label": "high-level recipe", "count": 5},
+    "L2": {"label": "sub-step", "count": 5},
+    "L3": {"label": "primitive", "count": 3}
+  },
+  "roles": ["planner", "worker", "reviewer", "reflector", "dispatcher", "shared"],
+  "nodes": [
+    {"id": "m_qa", "level": 0, "role": "dispatcher", "maturity": "stable"},
+    {"id": "m_task", "level": 0, "role": "dispatcher", "maturity": "stable"},
+    {"id": "m_discuss", "level": 0, "role": "dispatcher", "maturity": "stable"},
+    {"id": "m_auto", "level": 0, "role": "dispatcher", "maturity": "stable"},
+    {"id": "m_sprint", "level": 0, "role": "dispatcher", "maturity": "experimental"},
+
+    {"id": "decompose_task", "level": 1, "role": "planner", "maturity": "stable"},
+    {"id": "plan_task", "level": 1, "role": "planner", "maturity": "stable"},
+    {"id": "execute_task", "level": 1, "role": "worker", "maturity": "stable"},
+    {"id": "review_task", "level": 1, "role": "reviewer", "maturity": "stable"},
+    {"id": "reflect_task", "level": 1, "role": "reflector", "maturity": "experimental"},
+
+    {"id": "wiki_recall", "level": 2, "role": "planner", "maturity": "experimental"},
+    {"id": "wiki_persist", "level": 2, "role": "worker", "maturity": "experimental"},
+    {"id": "score_output", "level": 2, "role": "reviewer", "maturity": "stable"},
+    {"id": "extract_entities", "level": 2, "role": "shared", "maturity": "stable"},
+    {"id": "lint_wiki", "level": 2, "role": "shared", "maturity": "stable"},
+
+    {"id": "atomic_write", "level": 3, "role": "shared", "maturity": "stable"},
+    {"id": "parallel_execute", "level": 3, "role": "worker", "maturity": "stable"},
+    {"id": "early_stop", "level": 3, "role": "reviewer", "maturity": "stable"}
+  ],
+  "edges": [
+    {"from": "m_qa", "to": "decompose_task"},
+    {"from": "m_task", "to": "decompose_task"},
+    {"from": "m_task", "to": "plan_task"},
+    {"from": "m_task", "to": "execute_task"},
+    {"from": "m_task", "to": "review_task"},
+    {"from": "m_discuss", "to": "parallel_execute"},
+    {"from": "m_auto", "to": "decompose_task"},
+    {"from": "m_auto", "to": "plan_task"},
+    {"from": "m_auto", "to": "execute_task"},
+    {"from": "m_auto", "to": "review_task"},
+    {"from": "m_auto", "to": "reflect_task"},
+    {"from": "m_sprint", "to": "m_auto"},
+    {"from": "m_sprint", "to": "wiki_recall"},
+    {"from": "m_sprint", "to": "wiki_persist"},
+
+    {"from": "plan_task", "to": "extract_entities"},
+    {"from": "execute_task", "to": "parallel_execute"},
+    {"from": "execute_task", "to": "atomic_write"},
+    {"from": "review_task", "to": "score_output"},
+    {"from": "review_task", "to": "early_stop"},
+    {"from": "reflect_task", "to": "extract_entities"},
+    {"from": "wiki_recall", "to": "extract_entities"},
+    {"from": "wiki_persist", "to": "extract_entities"},
+    {"from": "wiki_persist", "to": "lint_wiki"},
+    {"from": "wiki_persist", "to": "atomic_write"},
+    {"from": "lint_wiki", "to": "atomic_write"}
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "type": "directed_dependency_graph",
+  "description": "Method invocation graph. Each edge means 'caller uses callee'.",
+  "edges": [
+    {"from": "m_qa", "to": "decompose_task", "type": "spawns"},
+    {"from": "m_task", "to": "plan_task", "type": "spawns"},
+    {"from": "m_task", "to": "execute_task", "type": "spawns"},
+    {"from": "m_task", "to": "review_task", "type": "spawns"},
+    {"from": "m_discuss", "to": "parallel_execute", "type": "uses"},
+    {"from": "m_auto", "to": "decompose_task", "type": "spawns"},
+    {"from": "m_auto", "to": "plan_task", "type": "spawns"},
+    {"from": "m_auto", "to": "execute_task", "type": "spawns"},
+    {"from": "m_auto", "to": "review_task", "type": "spawns"},
+    {"from": "m_auto", "to": "reflect_task", "type": "spawns"},
+    {"from": "m_sprint", "to": "wiki_recall", "type": "uses"},
+    {"from": "m_sprint", "to": "m_auto", "type": "spawns"},
+    {"from": "m_sprint", "to": "wiki_persist", "type": "uses"},
+    {"from": "plan_task", "to": "extract_entities", "type": "uses"},
+    {"from": "execute_task", "to": "parallel_execute", "type": "uses"},
+    {"from": "execute_task", "to": "atomic_write", "type": "uses"},
+    {"from": "review_task", "to": "score_output", "type": "uses"},
+    {"from": "review_task", "to": "early_stop", "type": "uses"},
+    {"from": "reflect_task", "to": "extract_entities", "type": "uses"},
+    {"from": "wiki_recall", "to": "extract_entities", "type": "uses"},
+    {"from": "wiki_persist", "to": "extract_entities", "type": "uses"},
+    {"from": "wiki_persist", "to": "lint_wiki", "type": "uses"},
+    {"from": "wiki_persist", "to": "atomic_write", "type": "uses"},
+    {"from": "lint_wiki", "to": "atomic_write", "type": "uses"}
+  ]
+}

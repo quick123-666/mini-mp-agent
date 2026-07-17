@@ -1,0 +1,12 @@
+node_id: m_auto
+name: Auto mode (default)
+level: 0
+purpose: Run full PWR Loop with max_iter=3 and early-stop on score threshold.
+inputs: ["task (str)"]
+outputs: ["final_result (str)", "iterations (list)", "success (bool)"]
+dependencies: []
+failure_modes: ["loop_stuck", "score_plateau"]
+agent_role: dispatcher
+selector_keywords: []
+maturity: stable
+evidence: tests/test_pwr_loop.py

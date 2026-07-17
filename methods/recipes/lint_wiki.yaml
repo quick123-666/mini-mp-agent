@@ -1,0 +1,12 @@
+node_id: lint_wiki
+name: Lint Wiki
+level: 2
+purpose: Run 7-step linter on wiki (orphan / broken_wikilinks / isolated / stale_claims / contradictions / missing / missing_cross_refs).
+inputs: ["wiki_root (Path)"]
+outputs: ["summary (dict)", "issues (list[dict])"]
+dependencies: ["atomic_write"]
+failure_modes: ["large_wiki_slow", "regex_escape"]
+agent_role: shared
+selector_keywords: ["lint", "validate wiki", "wiki check", "检查"]
+maturity: stable
+evidence: tests/test_phase3_phase4.py

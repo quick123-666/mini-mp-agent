@@ -1,0 +1,12 @@
+node_id: m_sprint
+name: Sprint mode
+level: 0
+purpose: Auto mode + wiki recall-before-plan + persist-after. Cross-session memory.
+inputs: ["task (str)", "wiki_root (Path)"]
+outputs: ["final_result (str)", "wiki_dialogue_entries (list)", "wiki_entities (list)"]
+dependencies: []
+failure_modes: ["wiki_corrupt", "recall_miss", "persist_fail"]
+agent_role: dispatcher
+selector_keywords: ["全栈", "多步", "完整", "ship it", "项目", "一整套", "全套", "entire"]
+maturity: experimental
+evidence: tests/test_phase6.py

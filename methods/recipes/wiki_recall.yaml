@@ -1,0 +1,12 @@
+node_id: wiki_recall
+name: Wiki Recall
+level: 2
+purpose: Search the wiki for prior context matching the current task. Returns top-k relevant entries.
+inputs: ["task (str)", "wiki_root (Path)", "top_k (int)"]
+outputs: ["entries (list[WikiEntry])"]
+dependencies: ["extract_entities"]
+failure_modes: ["recall_miss", "wiki_missing"]
+agent_role: planner
+selector_keywords: ["recall", "search wiki", "检索", "查 wiki"]
+maturity: experimental
+evidence: tests/test_phase3_phase4.py

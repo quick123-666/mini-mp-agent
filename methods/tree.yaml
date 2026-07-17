@@ -1,0 +1,136 @@
+# mini-mp-agent Hierarchical Work Method Tree
+# 5 modes (L0) → 5 recipes (L1) → 5 sub-steps (L2) → 3 primitives (L3)
+#
+# Built from methods/_index.json edges. This file is the human-readable view;
+# use methods_tree.py for programmatic access.
+
+version: 1
+root: methods
+
+tree:
+  - node_id: m_qa
+    label: "Q&A (single LLM call)"
+    level: 0
+    children:
+      - node_id: decompose_task
+        label: "Decompose Task"
+        level: 1
+        children:
+          - node_id: extract_entities
+            label: "Extract Entities"
+            level: 2
+
+  - node_id: m_task
+    label: "Task (PWR iter=1)"
+    level: 0
+    children:
+      - node_id: plan_task
+        label: "Plan Task"
+        level: 1
+        children:
+          - node_id: extract_entities
+            label: "Extract Entities"
+            level: 2
+      - node_id: execute_task
+        label: "Execute Task"
+        level: 1
+        children:
+          - node_id: parallel_execute
+            label: "Parallel Execute"
+            level: 3
+          - node_id: atomic_write
+            label: "Atomic Write"
+            level: 3
+      - node_id: review_task
+        label: "Review Task"
+        level: 1
+        children:
+          - node_id: score_output
+            label: "Score Output"
+            level: 2
+          - node_id: early_stop
+            label: "Early Stop"
+            level: 3
+
+  - node_id: m_discuss
+    label: "Discuss (5 persona parallel)"
+    level: 0
+    children:
+      - node_id: parallel_execute
+        label: "Parallel Execute"
+        level: 3
+
+  - node_id: m_auto
+    label: "Auto (full PWR + Reflect)"
+    level: 0
+    children:
+      - node_id: decompose_task
+        label: "Decompose Task"
+        level: 1
+        children:
+          - node_id: extract_entities
+            label: "Extract Entities"
+            level: 2
+      - node_id: plan_task
+        label: "Plan Task"
+        level: 1
+        children:
+          - node_id: extract_entities
+            label: "Extract Entities"
+            level: 2
+      - node_id: execute_task
+        label: "Execute Task"
+        level: 1
+        children:
+          - node_id: parallel_execute
+            label: "Parallel Execute"
+            level: 3
+          - node_id: atomic_write
+            label: "Atomic Write"
+            level: 3
+      - node_id: review_task
+        label: "Review Task"
+        level: 1
+        children:
+          - node_id: score_output
+            label: "Score Output"
+            level: 2
+          - node_id: early_stop
+            label: "Early Stop"
+            level: 3
+      - node_id: reflect_task
+        label: "Reflect Task"
+        level: 1
+        children:
+          - node_id: extract_entities
+            label: "Extract Entities"
+            level: 2
+
+  - node_id: m_sprint
+    label: "Sprint (auto + wiki recall + persist)"
+    level: 0
+    children:
+      - node_id: wiki_recall
+        label: "Wiki Recall"
+        level: 2
+        children:
+          - node_id: extract_entities
+            label: "Extract Entities"
+            level: 2
+      - node_id: m_auto
+        label: "Auto (full PWR + Reflect)"
+        level: 0
+      - node_id: wiki_persist
+        label: "Wiki Persist"
+        level: 2
+        children:
+          - node_id: extract_entities
+            label: "Extract Entities"
+            level: 2
+          - node_id: lint_wiki
+            label: "Lint Wiki"
+            level: 2
+            children:
+              - node_id: atomic_write
+                label: "Atomic Write"
+                level: 3

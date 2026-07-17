@@ -1,0 +1,12 @@
+node_id: parallel_execute
+name: Parallel Execute
+level: 3
+purpose: Run N tasks concurrently. Auto-detect sync vs async. Use run_in_executor for sync; gather for async.
+inputs: ["tasks (list[Task])", "workers (int)"]
+outputs: ["results (list[QueueResult])"]
+dependencies: []
+failure_modes: ["iscoroutine_misclassify", "executor_overflow"]
+agent_role: worker
+selector_keywords: ["parallel", "concurrent", "并发", "并行"]
+maturity: stable
+evidence: tests/test_phase3_phase4.py

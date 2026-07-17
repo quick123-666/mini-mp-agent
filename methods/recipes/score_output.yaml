@@ -1,0 +1,12 @@
+node_id: score_output
+name: Score Output
+level: 2
+purpose: Use Reviewer LLM to score output 0.0-1.0 with percentage or decimal handling.
+inputs: ["result (str)", "expected_criteria (list[str])", "llm (LLMCallable)"]
+outputs: ["score (float)", "rationale (str)"]
+dependencies: []
+failure_modes: ["llm_unparseable_score", "score_drift"]
+agent_role: reviewer
+selector_keywords: ["score", "rate", "rate this", "打分", "评分"]
+maturity: stable
+evidence: tests/test_phase6.py

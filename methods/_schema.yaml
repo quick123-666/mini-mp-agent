@@ -1,0 +1,83 @@
+# mini-mp-agent Method Tree Node Schema
+# 8 fields. Designed to be self-contained (no external references).
+#
+# Levels (L0-L4):
+#   L0 - mode entry (qa / task / discuss / auto / sprint)
+#   L1 - high-level recipe (decompose / plan / execute / review / reflect)
+#   L2 - sub-step (wiki-recall / score-output / extract-entities / lint-wiki / wiki-persist)
+#   L3 - primitive (atomic-write / parallel-execute / early-stop)
+#   L4 - tool (regex-search / file-io)
+
+version: 1
+node_fields:
+  - name: node_id
+    type: string
+    required: true
+    pattern: "^[a-z][a-z0-9_]{2,40}$"
+    description: Unique identifier. Lowercase + digits + underscores.
+  - name: name
+    type: string
+    required: true
+    description: Human-readable name.
+  - name: level
+    type: integer
+    required: true
+    enum: [0, 1, 2, 3, 4]
+    description: Tree depth (L0=entry, L4=tool).
+  - name: purpose
+    type: string
+    required: true
+    description: One-sentence description of what this method does.
+  - name: inputs
+    type: array
+    items: string
+    description: Input parameters / contracts.
+  - name: outputs
+    type: array
+    items: string
+    description: Output schema / contract.
+  - name: dependencies
+    type: array
+    items: string
+    pattern_ref: node_id
+    description: Other node_ids this depends on.
+  - name: failure_modes
+    type: array
+    items: string
+    description: Known failure patterns. Used by Reflector for categorization.
+  - name: agent_role
+    type: string
+    enum: [planner, worker, reviewer, reflector, dispatcher, shared]
+    description: Which role owns / invokes this method.
+  - name: selector_keywords
+    type: array
+    items: string
+    description: Keywords for auto-routing (matched by mode_router / Planner).
+  - name: maturity
+    type: string
+    enum: [experimental, stable, deprecated]
+    default: experimental
+  - name: parents
+    type: array
+    items: string
+    pattern_ref: node_id
+    description: Reverse edges (child -> parent). Set automatically by tree.
+  - name: evidence
+    type: string
+    description: Optional: which test file or demo exercises this method.
+
+# Allowed transitions
+allowed_parent_child:
+  - [0, 1]
+  - [1, 2]
+  - [2, 3]
+  - [3, 4]
+
+# Allowed role-level combinations
+allowed_role_level:
+  planner:   [0, 1, 2]
+  worker:    [1, 2, 3]
+  reviewer:  [1, 2]
+  reflector: [1, 2, 3]
+  dispatcher: [0]
+  shared:    [0, 1, 2, 3, 4]

@@ -1,0 +1,12 @@
+node_id: early_stop
+name: Early Stop
+level: 3
+purpose: Stop iteration loop when score >= threshold OR score plateaus for K consecutive iters.
+inputs: ["scores (list[float])", "threshold (float)", "plateau_k (int)"]
+outputs: ["stop (bool)", "reason (str)"]
+dependencies: []
+failure_modes: ["threshold_miscalibrated", "plateau_too_short"]
+agent_role: reviewer
+selector_keywords: ["early stop", "convergence", "终止", "收敛"]
+maturity: stable
+evidence: tests/test_pwr_loop.py

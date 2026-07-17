@@ -1,0 +1,12 @@
+node_id: wiki_persist
+name: Wiki Persist
+level: 2
+purpose: Write dialogue entry + entities + optional topic to wiki after PWR completes. Run lint_wiki.
+inputs: ["task (str)", "result (Any)", "wiki_root (Path)"]
+outputs: ["dialogue_slug (str)", "entity_slugs (list[str])", "lint_summary (dict)"]
+dependencies: ["extract_entities", "lint_wiki", "atomic_write"]
+failure_modes: ["wiki_locked", "lint_fail"]
+agent_role: worker
+selector_keywords: ["persist", "save to wiki", "落盘", "存档"]
+maturity: experimental
+evidence: tests/test_phase6.py

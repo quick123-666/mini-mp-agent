@@ -1,0 +1,12 @@
+node_id: review_task
+name: Review Task
+level: 1
+purpose: Score execution output on 4 dimensions (syntax/length/relevance/coherence).
+inputs: ["result (Any)", "plan (Plan)", "llm (LLMCallable)"]
+outputs: ["score (float)", "notes (list[str])"]
+dependencies: ["score_output", "extract_entities"]
+failure_modes: ["score_calibration", "reviewer_bias"]
+agent_role: reviewer
+selector_keywords: ["review", "check", "评", "打分"]
+maturity: stable
+evidence: tests/test_pwr_loop.py

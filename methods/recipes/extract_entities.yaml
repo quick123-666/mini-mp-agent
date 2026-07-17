@@ -1,0 +1,12 @@
+node_id: extract_entities
+name: Extract Entities
+level: 2
+purpose: Pull entities (people, tools, files, concepts) from text using alias table + Chinese heuristics.
+inputs: ["text (str)"]
+outputs: ["entities (list[Entity])", "types (set[str])"]
+dependencies: []
+failure_modes: ["alias_table_stale", "chinese_phrase_overlap"]
+agent_role: shared
+selector_keywords: ["extract", "parse", "entities", "抽取", "识别"]
+maturity: stable
+evidence: tests/test_phase5.py

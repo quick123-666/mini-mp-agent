@@ -1,0 +1,12 @@
+node_id: execute_task
+name: Execute Task
+level: 1
+purpose: Run plan steps via Worker role. Parallel steps via TaskQueue.
+inputs: ["plan (Plan)", "llm (LLMCallable)"]
+outputs: ["results (list)", "duration_s (float)"]
+dependencies: ["plan_task", "parallel_execute", "atomic_write"]
+failure_modes: ["step_timeout", "step_crash", "partial_complete"]
+agent_role: worker
+selector_keywords: ["execute", "run", "执行", "跑"]
+maturity: stable
+evidence: tests/test_pwr_loop.py

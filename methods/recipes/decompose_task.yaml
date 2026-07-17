@@ -1,0 +1,12 @@
+node_id: decompose_task
+name: Decompose Task
+level: 1
+purpose: Break a task into 3-7 ordered sub-steps with explicit method references.
+inputs: ["task (str)", "method_tree (MethodsTree)"]
+outputs: ["plan_steps (list[dict])"]
+dependencies: []
+failure_modes: ["over_decomposition", "method_not_found"]
+agent_role: planner
+selector_keywords: ["decompose", "break down", "拆解", "拆任务"]
+maturity: stable
+evidence: tests/test_methods_tree.py

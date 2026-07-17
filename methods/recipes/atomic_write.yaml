@@ -1,0 +1,12 @@
+node_id: atomic_write
+name: Atomic Write
+level: 3
+purpose: Write file atomically: tmp + os.replace + per-file lock + retry 5.
+inputs: ["path (Path)", "content (str)"]
+outputs: ["written (bool)"]
+dependencies: []
+failure_modes: ["lock_contention", "permission_denied"]
+agent_role: shared
+selector_keywords: ["write", "save", "atomic", "持久化"]
+maturity: stable
+evidence: tests/test_phase3_phase4.py

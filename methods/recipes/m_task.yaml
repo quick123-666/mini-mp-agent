@@ -1,0 +1,12 @@
+node_id: m_task
+name: Task mode
+level: 0
+purpose: Run PWR loop for max_iter=1 on a single concrete task.
+inputs: ["task (str)"]
+outputs: ["final_result (str)", "iterations (list)"]
+dependencies: []
+failure_modes: ["vague_task", "task_too_complex"]
+agent_role: dispatcher
+selector_keywords: ["做", "fix", "修", "create", "写", "实现", "build", "ship", "做一个"]
+maturity: stable
+evidence: tests/test_pwr_loop.py

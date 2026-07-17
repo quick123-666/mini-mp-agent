@@ -1,0 +1,12 @@
+node_id: reflect_task
+name: Reflect Task
+level: 1
+purpose: Compute failure fingerprint + categorize into 14 failure classes. Inject into next iteration.
+inputs: ["result (Any)", "review_notes (list)"]
+outputs: ["fingerprint (str)", "failure_class (str)", "reflection (str)"]
+dependencies: ["extract_entities"]
+failure_modes: ["fingerprint_collision", "class_mismatch"]
+agent_role: reflector
+selector_keywords: ["reflect", "反思", "复盘", "fingerprint"]
+maturity: experimental
+evidence: tests/test_methods_tree.py
