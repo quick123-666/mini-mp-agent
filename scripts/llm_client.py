@@ -25,7 +25,7 @@ from .pwr_loop import LLMCallable
 
 DEFAULT_PROVIDER = "minimax-plan"
 DEFAULT_MODEL = "MiniMax-M3"
-DEFAULT_BASE_URL = "<LLM_BASE_URL>"  # set in agent-config.json or AGENT_LLM_BASE_URL env var
+DEFAULT_BASE_URL = "https://api.minimax.chat"  # overridable via AGENT_LLM_BASE_URL env
 
 
 def _read_openclaw_api_key(provider: str = DEFAULT_PROVIDER) -> Optional[str]:
@@ -68,7 +68,11 @@ def _has_real_key(provider: str = DEFAULT_PROVIDER) -> bool:
 # ---------- Real LLM call ----------
 
 def _call_anthropic(base_url: str, api_key: str, model: str, system: str, user_msg: str, timeout_s: float = 30.0) -> str:
-    """Make an Anthropic-format messages call. Returns the response text."""
+    """Make an Anthropic-format messages call. Returns the response text.
+
+    For MiniMax-style base_url (https://api.minimax.chat), the anthropic
+    endpoint lives under /anthropic/v1/messages. We detect that automatically.
+    """
     try:
         import urllib.request
         import json as _json
@@ -80,8 +84,19 @@ def _call_anthropic(base_url: str, api_key: str, model: str, system: str, user_m
             "messages": [{"role": "user", "content": user_msg}],
         }).encode("utf-8")
 
+        # Endpoint resolution:
+        # - if user already passed a /anthropic segment, use as-is
+        # - if base_url is api.minimax.chat (and not OpenAI), insert /anthropic
+        # - otherwise, default /v1/messages
+        if "/anthropic" in base_url:
+            endpoint = base_url.rstrip("/") + "/v1/messages"
+        elif "minimax.chat" in base_url and "openai" not in base_url.lower():
+            endpoint = base_url.rstrip("/") + "/anthropic/v1/messages"
+        else:
+            endpoint = base_url.rstrip("/") + "/v1/messages"
+
         req = urllib.request.Request(
-            base_url + "/v1/messages",
+            endpoint,
             data=body,
             headers={
                 "Content-Type": "application/json",
@@ -105,12 +120,21 @@ def _call_anthropic(base_url: str, api_key: str, model: str, system: str, user_m
         raise RuntimeError(f"anthropic call failed: {e}") from e
 
 
-def _real_llm(system: str, user_msg: str, provider: str = DEFAULT_PROVIDER, model: str = DEFAULT_MODEL, base_url: str = DEFAULT_BASE_URL) -> str:
-    """Real LLM call. Tries anthropic-messages format."""
+def _real_llm(system: str, user_msg: str, provider: str = DEFAULT_PROVIDER, model: str = DEFAULT_MODEL, base_url: Optional[str] = None) -> str:
+    """Real LLM call. Tries anthropic-messages format at /v1/messages.
+
+    base_url resolution (priority):
+      1. explicit argument
+      2. AGENT_LLM_BASE_URL env
+      3. DEFAULT_BASE_URL (https://api.minimax.chat)
+    """
     key = _read_openclaw_api_key(provider) or os.environ.get(f"{provider.upper().replace('-', '_')}_API_KEY") or os.environ.get("LLM_API_KEY")
     if not key:
         raise RuntimeError("no API key available for provider " + provider)
-    return _call_anthropic(base_url, key, model, system, user_msg)
+    url = base_url or os.environ.get("AGENT_LLM_BASE_URL") or DEFAULT_BASE_URL
+    # strip trailing slash for clean concat
+    url = url.rstrip("/")
+    return _call_anthropic(url, key, model, system, user_msg)
 
 
 # ---------- Mock / stub LLM (deterministic for tests) ----------
