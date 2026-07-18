@@ -239,9 +239,13 @@ def persist_to_wiki_from_pwr(
 # ---------- Sprint handler integration ----------
 
 def wiki_integration_step(root: Path, task: str, pwr_result: Dict[str, Any]) -> Dict[str, Any]:
-    """The integration step called by sprint handler after PWR completes."""
+    """The integration step called by sprint handler after PWR completes.
+
+    Uses persist_to_wiki_from_pwr so modes/l1_recipes/roles are auto-derived
+    from the PWRResult (8-step lint mode_coverage passes).
+    """
     try:
-        return persist_to_wiki(root, task, pwr_result)
+        return persist_to_wiki_from_pwr(root, task, pwr_result)
     except Exception as e:
         return {"error": str(e), "wiki_root": str(root)}
 
