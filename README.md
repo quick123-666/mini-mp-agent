@@ -117,49 +117,98 @@ It also carries an **independent 18-method work method tree** — a deterministi
 
 ## 🌳 Work Method Tree
 
-Most "agent frameworks" leave the agent to decide which tool to call next. **mini-mp-agent** does the opposite: it carries an **independent, versioned, lintable recipe tree** that the agent consults deterministically. The tree is the source of truth — not an LLM artifact.
+The heart of mini-mp-agent is a **standalone, versioned recipe tree** that tells the system which tools are available, how they fit together, and who runs them. The tree is the source of truth — not an LLM artifact.
 
-### Tree shape (4 levels, 18 nodes)
+### Kitchen analogy
 
-The tree has four levels, totaling **18 nodes**. Each level represents a different decision point — from "which mode?" down to "which stdlib primitive?".
+Imagine a **1-person restaurant** that gets an order "fish-flavored pork":
 
-- **L0 — Mode** (5 nodes). The dispatch decision: `m_qa`, `m_task`, `m_discuss`, `m_auto`, `m_sprint`.
-- **L1 — Recipe** (5 nodes). The per-mode workflow primitive: `decompose_task`, `plan_task`, `execute_task`, `review_task`, `reflect_task`.
-- **L2 — Sub-step** (5 nodes). A single `RECIPES.actions` call: `wiki_recall`, `wiki_persist`, `score_output`, `extract_entities`, `lint_wiki`.
-- **L3 — Primitive** (3 nodes). Pure stdlib operations: `atomic_write` (tmp + `os.replace` + per-file lock + retry 5), `parallel_execute` (`asyncio.gather` / `run_in_executor`), `early_stop` (score threshold check).
-
-Higher-level nodes call into lower-level nodes through declared `dependencies`. The full graph: 18 nodes, 20 edges, validated by `tree.validate()`.
-
-### Tree API in 30 seconds
-
-```python
-from scripts.methods_tree import MethodsTree
-
-tree = MethodsTree()
-
-# 1. Lookup any node
-auto = tree.get("m_auto")
-print(auto.purpose)
-# → 'Run full PWR Loop with max_iter=3 and early-stop on score threshold.'
-
-# 2. Find a path between two nodes
-path = tree.find_path("m_sprint", "atomic_write")
-# → ['m_sprint', 'wiki_persist', 'atomic_write']
-
-# 3. Audit gaps (wiki coverage per mode)
-coverage = tree.wiki_mode_coverage()
-# → {'m_qa': 4, 'm_task': 5, 'm_auto': 7, 'm_sprint': 6, 'm_discuss': 3}
-
-# 4. Validate the whole tree
-report = tree.validate()
-assert report["valid"], report["errors"]
-print(report["stats"])
-# → {'total_nodes': 18, 'total_edges': 20, 'by_level': {0: 5, 1: 5, 2: 5, 3: 3}}
+```
+Waiter receives order →  Chef reads it
+                          │
+                          ▼
+                     "This is a main dish"
+                     (not dessert / drink)
+                          │
+                          ▼
+                     Look up "fish-flavored pork" recipe
+                     3 steps: slice meat · mix sauce · stir-fry
+                          │
+                          ▼
+                     Stir-fry needs: wok + heat + spatula
+                          │
+                          ▼
+                     Plate ✅
 ```
 
-### Recipe format (YAML)
+The 4 layers map directly onto the tree:
 
-Every L1/L2/L3 node is a YAML file under `methods/recipes/`. **Adding a new method = adding a YAML file, no Python change required.**
+| Layer | Kitchen | Real meaning | Example |
+|---|---|---|---|
+| **L0** | Station type | Which entry point? | main dish / soup / dessert |
+| **L1** | Recipe | A complete cooking flow | "fish-flavored pork" |
+| **L2** | Recipe step | One step in a recipe | slice meat · mix sauce · stir-fry |
+| **L3** | Physical tool | The actual utensil | wok · knife · fire |
+
+**18 nodes across 4 levels.**
+
+### 4 questions, 4 actions
+
+The tree answers 4 questions every agent needs:
+
+#### Q1: "Can you do this?"
+
+```python
+tree.search("parallel execution")
+# → [parallel_execute (50%), execute_task (30%), plan_task (20%)]
+```
+
+Scoring: keyword match (+2) · name match (+1) · description match (0).
+
+#### Q2: "What does this node do?"
+
+```python
+auto = tree.get("m_auto")
+# Returns an 8-field card (no LLM involved):
+#   node_id, name, level, purpose, inputs, outputs,
+#   dependencies, failure_modes, agent_role
+```
+
+#### Q3: "What's inside?"
+
+```python
+tree.get_children("m_auto", depth=1)
+# → [decompose_task, plan_task, execute_task, review_task, reflect_task]
+```
+
+L3 primitives return empty — tools have no children.
+
+#### Q4: "How do I get from A to B?"
+
+```python
+tree.find_path("m_sprint", "atomic_write")
+# → ['m_sprint', 'wiki_persist', 'atomic_write']
+```
+
+### Validation: catch typos before they ship
+
+```python
+report = tree.validate()
+# → {
+#     'valid': True,
+#     'errors': [],
+#     'stats': {'total_nodes': 18, 'total_edges': 25},
+#     'by_level': {0: 5, 1: 5, 2: 5, 3: 3},
+#     'by_role':  {'planner': 3, 'worker': 3, 'reviewer': 3,
+#                  'reflector': 1, 'dispatcher': 5, 'shared': 3}
+#   }
+```
+
+Catches: missing edge targets · illegal level jumps (e.g. L0 → L4) · cycles.
+
+### Recipe format
+
+Each L1/L2/L3 node is one YAML file under `methods/recipes/`. **Adding a new method = adding a YAML file, no Python change required.**
 
 ```yaml
 # methods/recipes/wiki_persist.yaml
@@ -177,15 +226,7 @@ maturity: experimental
 evidence: tests/test_phase6.py
 ```
 
-### Why this is different
-
-| Approach | Who picks the next step | Verifiability |
-|---|---|---|
-| LangChain / CrewAI / AutoGen | The LLM chooses via prompt | Opaque · depends on prompt drift |
-| Hand-coded `if/else` | The developer writes each branch | Deterministic · but rigid |
-| **mini-mp-agent work tree** | **A YAML schema + lint enforces it** | **Deterministic · extensible · lintable · diffable** |
-
-The work tree is **independent of `scripts/`** — you can swap the implementation underneath (different LLM client, different concurrency model) without touching the recipe YAMLs. `git diff` on a `.yaml` file is the review artifact.
+> Full walkthrough, design rationale, and the kitchen analogy in plain language: see [`METHODS_TREE_INTRO.md`](./METHODS_TREE_INTRO.md).
 
 ---
 

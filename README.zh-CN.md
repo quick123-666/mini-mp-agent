@@ -115,47 +115,96 @@
 
 ## 🌳 工作方法树
 
-大多数"agent 框架"把"下一步调哪个工具"交给 LLM 决定。**mini-mp-agent** 反着来——它带一棵**独立、版本化、可 lint 的工作树**，agent 通过确定性接口查询。树才是真相之源，不是 LLM 的副产品。
+mini-mp-agent 的核心是一棵**独立、版本化的工作树**——它告诉系统有哪些工具可用、它们怎么组合、由谁执行。树才是真相之源，不是 LLM 的临时产物。
 
-### 树形结构（4 层 · 18 节点）
+### 厨房比喻
 
-树分四层，共 **18 个节点**。每一层代表一个不同的决策点——从"走哪个模式？"一直下钻到"用哪个标准库原语？"。
+想象一家**只有一个员工的餐厅**，接到一份"鱼香肉丝"订单：
 
-- **L0 — 模式**（5 个）。调度决策：`m_qa`、`m_task`、`m_discuss`、`m_auto`、`m_sprint`。
-- **L1 — 配方**（5 个）。模式内的工作原语：`decompose_task`、`plan_task`、`execute_task`、`review_task`、`reflect_task`。
-- **L2 — 子步骤**（5 个）。一次 `RECIPES.actions` 调用：`wiki_recall`、`wiki_persist`、`score_output`、`extract_entities`、`lint_wiki`。
-- **L3 — 原语**（3 个）。纯标准库操作：`atomic_write`（tmp + `os.replace` + 文件锁 + 重试 5 次）、`parallel_execute`（`asyncio.gather` / `run_in_executor`）、`early_stop`（评分阈值检查）。
-
-上层节点通过声明的 `dependencies` 调用下层节点。完整图：18 个节点、20 条边，由 `tree.validate()` 校验。
-
-### 30 秒上手 API
-
-```python
-from scripts.methods_tree import MethodsTree
-
-tree = MethodsTree()
-
-# 1. 查询任意节点
-auto = tree.get("m_auto")
-print(auto.purpose)
-# → 'Run full PWR Loop with max_iter=3 and early-stop on score threshold.'
-
-# 2. 在两节点之间找路径
-path = tree.find_path("m_sprint", "atomic_write")
-# → ['m_sprint', 'wiki_persist', 'atomic_write']
-
-# 3. 审计 wiki 覆盖度
-coverage = tree.wiki_mode_coverage()
-# → {'m_qa': 4, 'm_task': 5, 'm_auto': 7, 'm_sprint': 6, 'm_discuss': 3}
-
-# 4. 整树校验
-report = tree.validate()
-assert report["valid"], report["errors"]
-print(report["stats"])
-# → {'total_nodes': 18, 'total_edges': 20, 'by_level': {0: 5, 1: 5, 2: 5, 3: 3}}
+```
+服务员接单 →  厨师看单
+                │
+                ▼
+           "这是主菜档口"
+           (不是甜品 / 饮品)
+                │
+                ▼
+           查"鱼香肉丝"菜谱
+           3 步: 切肉丝 · 调汁 · 大火爆炒
+                │
+                ▼
+           大火爆炒要用: 锅 + 火 + 铲子
+                │
+                ▼
+           出菜 ✅
 ```
 
-### 配方格式（YAML）
+四层直接对应工作树：
+
+| 层 | 厨房 | 实际含义 | 例子 |
+|---|---|---|---|
+| **L0** | 档口类型 | 走哪个入口？ | 主菜 / 汤 / 甜品 |
+| **L1** | 菜谱 | 一道完整菜的做法 | "鱼香肉丝做法" |
+| **L2** | 菜谱的步骤 | 菜谱里的某一步 | 切肉丝 · 调汁 · 大火爆炒 |
+| **L3** | 物理工具 | 真正动手的家伙 | 锅 · 刀 · 火 |
+
+**18 个节点分布在 4 层**。
+
+### 4 个核心问题，4 个查询动作
+
+工作树回答 agent 必然会问的 4 个问题：
+
+#### 问题 1:「这活你能干吗?」
+
+```python
+tree.search("并行执行")
+# → [parallel_execute (50%), execute_task (30%), plan_task (20%)]
+```
+
+打分规则：关键词直接命中 +2 · 名字命中 +1 · 描述命中 0。
+
+#### 问题 2:「这节点具体干啥?」
+
+```python
+auto = tree.get("m_auto")
+# 返回 8 字段卡片（不调 LLM）：
+#   node_id, name, level, purpose, inputs, outputs,
+#   dependencies, failure_modes, agent_role
+```
+
+#### 问题 3:「它里面有啥?」
+
+```python
+tree.get_children("m_auto", depth=1)
+# → [decompose_task, plan_task, execute_task, review_task, reflect_task]
+```
+
+L3 原语返回空——工具没有下一层。
+
+#### 问题 4:「从 A 怎么走到 B?」
+
+```python
+tree.find_path("m_sprint", "atomic_write")
+# → ['m_sprint', 'wiki_persist', 'atomic_write']
+```
+
+### 健康检查：拼写错？立刻抓出来
+
+```python
+report = tree.validate()
+# → {
+#     'valid': True,
+#     'errors': [],
+#     'stats': {'total_nodes': 18, 'total_edges': 25},
+#     'by_level': {0: 5, 1: 5, 2: 5, 3: 3},
+#     'by_role':  {'planner': 3, 'worker': 3, 'reviewer': 3,
+#                  'reflector': 1, 'dispatcher': 5, 'shared': 3}
+#   }
+```
+
+校验 3 件事：边引用的节点是否存在 · 级别跨度是否合理（如 L0 → L4 跳跃）· 是否出现环（死循环）。
+
+### 配方格式
 
 每个 L1/L2/L3 节点对应 `methods/recipes/` 下一个 YAML 文件。**新增方法 = 加一个 YAML 文件，无需改 Python**。
 
@@ -175,15 +224,7 @@ maturity: experimental
 evidence: tests/test_phase6.py
 ```
 
-### 为什么这样设计
-
-| 思路 | 下一步谁选 | 可验证性 |
-|---|---|---|
-| LangChain / CrewAI / AutoGen | LLM 通过 prompt 决定 | 黑盒 · 容易随 prompt 漂移 |
-| 手写 `if/else` | 开发者硬编码每条分支 | 确定性 · 但僵硬 |
-| **mini-mp-agent 工作树** | **YAML schema + lint 强制** | **确定性 · 可扩展 · 可 lint · 可 diff** |
-
-工作方法树**独立于 `scripts/`**——换底层实现（不同 LLM 客户端、不同并发模型）无需动 recipe YAML。`git diff` 一个 `.yaml` 文件就是 review artifact。
+> 完整讲解、设计理念、人话版厨房比喻，详见 [`METHODS_TREE_INTRO.md`](./METHODS_TREE_INTRO.md)。
 
 ---
 
