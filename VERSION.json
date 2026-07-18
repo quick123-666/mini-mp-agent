@@ -1,6 +1,7 @@
 {
   "name": "mini-mp-agent",
-  "version": "1.0.1",
+  "version": "1.1.1",
+  "previous_version": "1.1.0",
   "type": "single-agent-multi-role-loop",
   "status": "stable",
   "created_at": "2026-07-17",
@@ -31,7 +32,13 @@
       "file_lock": "per-file FileLock (msvcrt.locking / fcntl.flock)",
       "atomic_write": ".tmp.<hex> + os.replace + retry 5 + backoff"
     },
-    "llm_client": "real LLM (Anthropic-compatible) + deterministic mock fallback"
+    "llm_client": "real LLM (Anthropic-compatible) + deterministic mock fallback",
+    "cron": {
+      "engine": "OpenClaw cron (3h interval)",
+      "job_id": "4bfd77ef-5728-4c0e-bc57-0f3f6f2712bd",
+      "wrapper": "scripts/cron_llmwiki.sh",
+      "schedule": "every 3h, hour==23 cron-full + lint, other hours incremental + lint"
+    }
   },
   "docs": {
     "files": [
@@ -39,11 +46,12 @@
       "METHODS_TREE_INTRO.md",
       "FEATURES.md",
       "BUILD.md",
-      "CHANGELOG.md"
+      "CHANGELOG.md",
+      "RELEASE_NOTES_v1.1.1.md"
     ]
   },
   "tests": {
-    "total": 307,
+    "total": 333,
     "files": [
       "tests/test_mode_router.py",
       "tests/test_pwr_loop.py",
@@ -51,16 +59,18 @@
       "tests/test_phase5.py",
       "tests/test_phase6.py",
       "tests/test_methods_tree.py",
-      "tests/test_phase8_wiki_classification.py"
+      "tests/test_phase8_wiki_classification.py",
+      "tests/test_by_project_slug.py"
     ],
     "breakdown": {
       "test_mode_router": 39,
       "test_pwr_loop": 51,
       "test_phase3_phase4": 78,
       "test_phase5": 50,
-      "test_phase6": 35,
+      "test_phase6": 38,
       "test_methods_tree": 32,
-      "test_phase8_wiki_classification": 22
+      "test_phase8_wiki_classification": 22,
+      "test_by_project_slug": 23
     }
   },
   "phases": {
@@ -71,6 +81,8 @@
     "phase_5": "entity_extractor.py + discuss handler 5-persona (shipped 2026-07-18)",
     "phase_6": "llm_client.py + wiki_integration.py (shipped 2026-07-18)",
     "phase_7": "methods_tree.py + methods/ folder (shipped 2026-07-18)",
-    "phase_8": "wiki classification: front-matter fields + query APIs + coverage report + lint step 8 (shipped 2026-07-18)"
+    "phase_8": "wiki classification: front-matter fields + query APIs + coverage report + lint step 8 (shipped 2026-07-18)",
+    "phase_9": "v1.1.0 — LLM Wiki redesign: 1 session = 1 topic, wiki_ingest 4-way pipeline + atomic state (shipped 2026-07-18)",
+    "phase_10": "v1.1.1 — ship patch: .gitignore llmwiki/ + *.lock, _sanitize_project_slug() cross-platform safety, real OpenClaw cron hooked (shipped 2026-07-18)"
   }
 }

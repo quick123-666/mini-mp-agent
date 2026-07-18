@@ -3,14 +3,14 @@
 # mini-mp-agent
 
 **Single-agent multi-role PWR Loop with Karpathy LLM Wiki**
-*5 modes · 18-method work tree · 0 external dependencies · 310/310 tests PASS*
+*5 modes · 18-method work tree · 0 external dependencies · 333/333 tests PASS*
 
 [![Tests](https://github.com/quick123-666/mini-mp-agent/actions/workflows/test.yml/badge.svg)](https://github.com/quick123-666/mini-mp-agent/actions/workflows/test.yml)
-[![Release v1.1.0](https://img.shields.io/badge/release-v1.1.0-blue.svg)](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.1.0)
+[![Release v1.1.1](https://img.shields.io/badge/release-v1.1.1-blue.svg)](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.1.1)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#-philosophy)
-[![Tests 310/310](https://img.shields.io/badge/tests-310%2F310-brightgreen.svg)](#-tests)
+[![Tests 333/333](https://img.shields.io/badge/tests-333%2F333-brightgreen.svg)](#-tests)
 
 **Languages**: [English](./README.md) · [中文 (简体)](./README.zh-CN.md)
 
@@ -18,7 +18,9 @@
 
 </div>
 
-> **🆕 v1.1.0 — LLM Wiki redesign** (2026-07-18): 1 session = 1 topic (67x fewer files). New `scripts/wiki_ingest.py` 4-way pipeline (cron-full / mem / session / lint) + atomic state + auto index regen. See [RELEASE_NOTES_v1.1.0.md](./RELEASE_NOTES_v1.1.0.md).
+> **🆕 v1.1.1 — Ship patch** (2026-07-18): `.gitignore llmwiki/ + *.lock`, `_sanitize_project_slug()` cross-platform safety, real OpenClaw cron (3h) hooked. 310 → 333 tests. See [RELEASE_NOTES_v1.1.1.md](./RELEASE_NOTES_v1.1.1.md).
+>
+> **v1.1.0 — LLM Wiki redesign** (2026-07-18): 1 session = 1 topic (67x fewer files). New `scripts/wiki_ingest.py` 4-way pipeline (cron-full / mem / session / lint) + atomic state + auto index regen. See [RELEASE_NOTES_v1.1.0.md](./RELEASE_NOTES_v1.1.0.md).
 
 ---
 
@@ -78,7 +80,7 @@ It also carries an **independent 18-method work method tree** — a deterministi
 - ⚡ **asyncio concurrency** — `task_queue.py` WorkerPool (max=100) + `parallel_execute` recipe
 - 🧪 **Mock-friendly LLM client** — Anthropic-compatible real API + deterministic mock fallback (no API key needed for tests)
 - 📦 **Zero external dependencies** — install nothing, run anywhere with Python 3.11+
-- ✅ **307 / 307 tests PASS** — stdlib-only runner, no `pytest` required
+- ✅ **333 / 333 tests PASS** — stdlib-only runner, no `pytest` required
 
 ---
 
@@ -301,7 +303,7 @@ Expected output: `=== N/N PASS, 0 FAIL ===` for each.
 | `test_phase5.py` | 50 | entity_extractor + 5-persona discuss |
 | `test_phase6.py` | 35 | llm_client + wiki_integration |
 | `test_phase8_wiki_classification.py` | 22 | front-matter + query APIs + mode_coverage |
-| **Total** | **307** | **All passing ✅** |
+| **Total** | **333** | **All passing ✅** |
 
 ### Optional: pytest cross-check
 
@@ -341,7 +343,7 @@ mini-mp-agent/
 │   ├── task_queue.py
 │   ├── wiki_integration.py
 │   └── llm_client.py
-├── tests/                      # 7 files, 307 tests (stdlib runner)
+├── tests/                      # 8 files, 333 tests (stdlib runner)
 ├── examples/
 │   └── e2e_demo.py             # End-to-end demo
 ├── README.md                   # ← you are here
@@ -414,7 +416,7 @@ If you have a suggestion that would make this better, please fork the repo and c
 
 ### Contribution requirements
 
-- All **307 existing tests must still pass** (run the stdlib runners above).
+- All **333 existing tests must still pass** (run the stdlib runners above).
 - New features should add at least one test in the matching `tests/test_*.py`.
 - Wiki-related changes must keep all **8 lint steps clean** — `python -m scripts.lint_wiki` (or `scripts/lint_wiki.py` if invoked as a CLI).
 - Use the **independent work method tree** rather than hard-coding recipes in Python — the tree is the source of truth.
@@ -431,7 +433,7 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for the full text.
 
 - 🐛 **GitHub Issues** — [open one](https://github.com/quick123-666/mini-mp-agent/issues/new)
 - 💬 **GitHub Discussions** — [start a thread](https://github.com/quick123-666/mini-mp-agent/discussions/new)
-- 🏷️ **Releases** — [v1.0.1](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.0.1)
+- 🏷️ **Releases** — [v1.1.1](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.1.1) · [v1.1.0](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.1.0) · [v1.0.1](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.0.1)
 
 ---
 
