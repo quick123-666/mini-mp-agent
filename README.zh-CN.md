@@ -30,6 +30,7 @@
   - [技术栈](#技术栈)
 - [✨ 功能特性](#-功能特性)
 - [🏗️ 架构](#-架构)
+- [🌳 工作方法树](#-工作方法树)
 - [🚀 快速上手](#-快速上手)
 - [📦 安装](#-安装)
 - [🧪 测试](#-测试)
@@ -109,6 +110,99 @@
 ```
 
 **PWR 循环** = `Plan → Work → Review → Reflect`，可在评分达到阈值时早停。每个角色对应 `scripts/roles.py` 里注册的一个 `SYSTEM_PROMPT`。模式路由决定调用哪个 handler，工作方法树告诉 handler 接下来调用哪个原语 / 子步骤 / 配方。
+
+---
+
+## 🌳 工作方法树
+
+大多数"agent 框架"把"下一步调哪个工具"交给 LLM 决定。**mini-mp-agent** 反着来——它带一棵**独立、版本化、可 lint 的工作树**，agent 通过确定性接口查询。树才是真相之源，不是 LLM 的副产品。
+
+### 树形结构（4 层 · 18 节点）
+
+```
+L0 模式          │ 5 个节点（调度决策）
+├── m_qa         │ 单轮问答
+├── m_task       │ 结构化任务
+├── m_discuss    │ 5 人格辩论
+├── m_auto       │ 完整 PWR 循环（默认）
+└── m_sprint     │ PWR + wiki recall/persist
+       │
+L1 配方          │ 5 个节点（模式内原语）
+├── decompose_task
+├── plan_task
+├── execute_task
+├── review_task
+└── reflect_task
+       │
+L2 子步骤        │ 5 个节点（一次 RECIPE 调用）
+├── wiki_recall
+├── wiki_persist
+├── score_output
+├── extract_entities
+└── lint_wiki
+       │
+L3 原语          │ 3 个节点（纯标准库操作）
+├── atomic_write       │ tmp + os.replace + 文件锁 + 重试 5 次
+├── parallel_execute   │ asyncio.gather / run_in_executor
+└── early_stop         │ 评分阈值检查
+```
+
+### 30 秒上手 API
+
+```python
+from scripts.methods_tree import MethodsTree
+
+tree = MethodsTree()
+
+# 1. 查询任意节点
+auto = tree.get("m_auto")
+print(auto.purpose)
+# → 'Run full PWR Loop with max_iter=3 and early-stop on score threshold.'
+
+# 2. 在两节点之间找路径
+path = tree.find_path("m_sprint", "atomic_write")
+# → ['m_sprint', 'wiki_persist', 'atomic_write']
+
+# 3. 审计 wiki 覆盖度
+coverage = tree.wiki_mode_coverage()
+# → {'m_qa': 4, 'm_task': 5, 'm_auto': 7, 'm_sprint': 6, 'm_discuss': 3}
+
+# 4. 整树校验
+report = tree.validate()
+assert report["valid"], report["errors"]
+print(report["stats"])
+# → {'total_nodes': 18, 'total_edges': 20, 'by_level': {0: 5, 1: 5, 2: 5, 3: 3}}
+```
+
+### 配方格式（YAML）
+
+每个 L1/L2/L3 节点对应 `methods/recipes/` 下一个 YAML 文件。**新增方法 = 加一个 YAML 文件，无需改 Python**。
+
+```yaml
+# methods/recipes/wiki_persist.yaml
+node_id: wiki_persist
+name: Wiki Persist
+level: 2
+purpose: Write dialogue entry + entities + optional topic to wiki after PWR completes.
+agent_role: worker
+inputs: ["task (str)", "result (Any)", "wiki_root (Path)"]
+outputs: ["dialogue_slug (str)", "entity_slugs (list[str])", "lint_summary (dict)"]
+dependencies: ["extract_entities", "lint_wiki", "atomic_write"]
+failure_modes: ["wiki_locked", "lint_fail"]
+selector_keywords: ["persist", "save to wiki", "落盘", "存档"]
+maturity: experimental
+evidence: tests/test_phase6.py
+```
+
+### 为什么这样设计
+
+| 思路 | 下一步谁选 | 可验证性 |
+|---|---|---|
+| LangChain / CrewAI / AutoGen | LLM 通过 prompt 决定 | 黑盒 · 容易随 prompt 漂移 |
+| 手写 `if/else` | 开发者硬编码每条分支 | 确定性 · 但僵硬 |
+| **mini-mp-agent 工作树** | **YAML schema + lint 强制** | **确定性 · 可扩展 · 可 lint · 可 diff** |
+
+工作方法树**独立于 `scripts/`**——换底层实现（不同 LLM 客户端、不同并发模型）无需动 recipe YAML。`git diff` 一个 `.yaml` 文件就是 review artifact。
 
 ---
 

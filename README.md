@@ -32,6 +32,7 @@
   - [Built With](#built-with)
 - [✨ Features](#-features)
 - [🏗️ Architecture](#-architecture)
+- [🌳 Work Method Tree](#-work-method-tree)
 - [🚀 Quick Start](#-quick-start)
 - [📦 Installation](#-installation)
 - [🧪 Tests](#-tests)
@@ -111,6 +112,99 @@ It also carries an **independent 18-method work method tree** — a deterministi
 ```
 
 **PWR Loop** = `Plan → Work → Review → Reflect` with optional early-stop on score threshold. Each role is a different `SYSTEM_PROMPT` registered in `scripts/roles.py`. The mode router picks which handler to invoke; the work method tree tells each handler which primitive / sub-step / recipe to call next.
+
+---
+
+## 🌳 Work Method Tree
+
+Most "agent frameworks" leave the agent to decide which tool to call next. **mini-mp-agent** does the opposite: it carries an **independent, versioned, lintable recipe tree** that the agent consults deterministically. The tree is the source of truth — not an LLM artifact.
+
+### Tree shape (4 levels, 18 nodes)
+
+```
+L0 mode           │ 5 nodes (dispatch decision)
+├── m_qa          │ single-shot Q&A
+├── m_task        │ structured task execution
+├── m_discuss     │ 5-persona debate
+├── m_auto        │ full PWR Loop (default)
+└── m_sprint      │ PWR + wiki recall/persist
+       │
+L1 recipe         │ 5 nodes (per-mode primitive)
+├── decompose_task
+├── plan_task
+├── execute_task
+├── review_task
+└── reflect_task
+       │
+L2 sub-step       │ 5 nodes (one RECIPE call)
+├── wiki_recall
+├── wiki_persist
+├── score_output
+├── extract_entities
+└── lint_wiki
+       │
+L3 primitive      │ 3 nodes (pure stdlib op)
+├── atomic_write  │ tmp + os.replace + per-file lock + retry 5
+├── parallel_execute │ asyncio.gather / run_in_executor
+└── early_stop    │ score threshold check
+```
+
+### Tree API in 30 seconds
+
+```python
+from scripts.methods_tree import MethodsTree
+
+tree = MethodsTree()
+
+# 1. Lookup any node
+auto = tree.get("m_auto")
+print(auto.purpose)
+# → 'Run full PWR Loop with max_iter=3 and early-stop on score threshold.'
+
+# 2. Find a path between two nodes
+path = tree.find_path("m_sprint", "atomic_write")
+# → ['m_sprint', 'wiki_persist', 'atomic_write']
+
+# 3. Audit gaps (wiki coverage per mode)
+coverage = tree.wiki_mode_coverage()
+# → {'m_qa': 4, 'm_task': 5, 'm_auto': 7, 'm_sprint': 6, 'm_discuss': 3}
+
+# 4. Validate the whole tree
+report = tree.validate()
+assert report["valid"], report["errors"]
+print(report["stats"])
+# → {'total_nodes': 18, 'total_edges': 20, 'by_level': {0: 5, 1: 5, 2: 5, 3: 3}}
+```
+
+### Recipe format (YAML)
+
+Every L1/L2/L3 node is a YAML file under `methods/recipes/`. **Adding a new method = adding a YAML file, no Python change required.**
+
+```yaml
+# methods/recipes/wiki_persist.yaml
+node_id: wiki_persist
+name: Wiki Persist
+level: 2
+purpose: Write dialogue entry + entities + optional topic to wiki after PWR completes.
+agent_role: worker
+inputs: ["task (str)", "result (Any)", "wiki_root (Path)"]
+outputs: ["dialogue_slug (str)", "entity_slugs (list[str])", "lint_summary (dict)"]
+dependencies: ["extract_entities", "lint_wiki", "atomic_write"]
+failure_modes: ["wiki_locked", "lint_fail"]
+selector_keywords: ["persist", "save to wiki", "落盘", "存档"]
+maturity: experimental
+evidence: tests/test_phase6.py
+```
+
+### Why this is different
+
+| Approach | Who picks the next step | Verifiability |
+|---|---|---|
+| LangChain / CrewAI / AutoGen | The LLM chooses via prompt | Opaque · depends on prompt drift |
+| Hand-coded `if/else` | The developer writes each branch | Deterministic · but rigid |
+| **mini-mp-agent work tree** | **A YAML schema + lint enforces it** | **Deterministic · extensible · lintable · diffable** |
+
+The work tree is **independent of `scripts/`** — you can swap the implementation underneath (different LLM client, different concurrency model) without touching the recipe YAMLs. `git diff` on a `.yaml` file is the review artifact.
 
 ---
 
