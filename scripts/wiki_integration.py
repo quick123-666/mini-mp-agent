@@ -224,6 +224,27 @@ def persist_to_wiki_from_pwr(
                     if recipe_id not in recipes:
                         recipes.append(recipe_id)
                     roles.add(key)
+    # Auto-derive a topic title from the task if caller didn't pass one.
+    # Sprint runs always benefit from a topic page (cross-cutting synthesis).
+    # We strip the meta-prompt prefix so the topic title is the actual user request,
+    # not "Analyze this OpenClaw session (...)".
+    if not write_topic_for:
+        text = (task or "").strip()
+        # skip the "Analyze this OpenClaw session (...)..." meta lines
+        # look for the first real content after "--- session transcript ---"
+        if "--- session transcript ---" in text:
+            text = text.split("--- session transcript ---", 1)[1]
+        # take the first user message (up to 80 chars, one line)
+        for line in text.splitlines():
+            line = line.strip()
+            if line.startswith("[user"):
+                # next non-empty line is the user content
+                continue
+            if line and not line.startswith("["):
+                write_topic_for = line[:80]
+                break
+        if not write_topic_for:
+            write_topic_for = "sprint-summary"
     return persist_to_wiki(
         root,
         task,
