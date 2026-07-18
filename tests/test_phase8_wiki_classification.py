@@ -353,7 +353,13 @@ def test_lint_summary_includes_unused_method_count():
 # ============================================================
 
 def test_persist_to_wiki_classifies_entries():
-    """When persist_to_wiki called with classification, wiki entries have it."""
+    """When persist_to_wiki called with classification, wiki entries have it.
+
+    v1.1.0: persist_to_wiki now writes 1 topic page (no dialogue/entity
+    pages). With write_topic_for=None, no entries are written, so the
+    wiki_by_mode query returns 0. With write_topic_for set, the topic
+    page is the entry tagged with classification.
+    """
     from scripts.wiki_integration import persist_to_wiki as pi_persist
     with tempfile.TemporaryDirectory() as tmp:
         root = setup_wiki(tmp)
@@ -365,13 +371,14 @@ def test_persist_to_wiki_classifies_entries():
         }
         result = pi_persist(
             root, "ship Plan F v8.1", pwr,
+            write_topic_for="mp-test-classify",
             modes=["m_sprint"],
             l1_recipes=["plan_task", "execute_task"],
             roles=["planner", "worker"],
         )
         # Now query the wiki
         by_mode = wiki_by_mode(root, "m_sprint")
-        assert_true(len(by_mode) >= 1, "at least 1 entry tagged m_sprint")
+        assert_true(len(by_mode) >= 1, "at least 1 entry tagged m_sprint (topic page)")
         # Verify cache has classification
         cache = json.loads((root / "_meta" / ".frontmatter_cache.json").read_text())
         first_slug = next(iter(cache.keys()))

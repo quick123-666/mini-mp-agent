@@ -47,6 +47,32 @@ ZH_STOPWORDS = {
     "讨论", "实现", "测试", "运行", "使用", "考虑", "希望", "认为", "觉得",
     "今天", "明天", "昨天", "现在", "以后", "之前", "然后", "所以",
 }
+# NEW: any phrase CONTAINING these substrings is a noise phrase (quantity words,
+# locative particles, pronouns, time words, common verbs). Matched as substring
+# anywhere in the candidate phrase.
+ZH_NOISE_SUBSTRINGS = (
+    # quantity + measure words
+    "一个", "两个", "三个", "几个", "多个", "这个", "那个", "每个", "所有",
+    "一些", "一下", "几个", "无数", "许多",
+    # pronouns + locative
+    "我", "你", "他", "她", "它", "我们", "你们", "他们",
+    "这里", "那里", "哪里", "这里", "里面", "外面", "上面", "下面", "中间",
+    "里", "中", "内", "外", "上", "下",
+    # time
+    "今天", "明天", "昨天", "刚才", "现在", "以后", "之前", "后来", "之后",
+    "刚才", "一会儿",
+    # common verbs
+    "写", "读", "看", "听", "说", "做", "想", "是", "有", "在", "到",
+    "跑", "调用", "使用", "处理", "运行", "测试", "配置", "安装", "下载",
+    "调用", "调用", "跑", "跑通", "执行", "打开", "关闭", "启动", "停止",
+    "读", "读取", "写", "写入", "建", "创建", "删", "删除", "改", "修改",
+    "跑", "查", "查找", "搜索", "获取", "获得", "得到",
+    # common filler
+    "请", "建议", "应该", "可以", "需要", "要求", "希望",
+)
+# NEW: 2-char phrases (the noisiest) are downgraded to confidence 0.3 so they
+# get filtered out at the default min_confidence=0.5. 3-4 char phrases keep 0.5.
+ZH_TRIGRAMS_REQUIRED = True  # require at least 3 chars for a non-fallback entity
 
 
 def _match_alias(text_lower: str) -> List[Dict[str, Any]]:
@@ -125,6 +151,9 @@ def _match_chinese_phrases(text: str) -> List[Dict[str, Any]]:
     - trim trailing particle chars (了/的/是/有/在/和/与/及/或/也/但/就/并/着/过)
     - skip if shorter than 2 chars after trim
     - skip if in ZH_STOPWORDS common-verb list
+    - skip if contains any ZH_NOISE_SUBSTRINGS (quantities, pronouns, time, common verbs)
+    - 2-char phrases get downgraded to confidence 0.3 (filtered at default 0.5)
+    - 3-4 char phrases get 0.5 (current)
     """
     found = []
     seen = set()
@@ -137,13 +166,20 @@ def _match_chinese_phrases(text: str) -> List[Dict[str, Any]]:
             continue
         if phrase in ZH_STOPWORDS:
             continue
+        # NEW: drop phrases that contain any noise substring anywhere
+        if any(ns in phrase for ns in ZH_NOISE_SUBSTRINGS):
+            continue
         if phrase in seen:
             continue
         seen.add(phrase)
+        # NEW: 2-char phrases are too noisy (most of the 1009-entity flood
+        # came from 2-char chunks like 个测试, 服务器, 调用). Downgrade them
+        # to 0.3 so the default min_confidence=0.5 filter drops them.
+        confidence = 0.30 if len(phrase) == 2 else 0.50
         found.append({
             "entity": phrase,
             "type": "concept",
-            "confidence": 0.50,
+            "confidence": confidence,
             "matched_as": phrase,
         })
     return found

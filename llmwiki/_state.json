@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "sessions": {
+    "b0b6a369-cd49-4939-9e96-3b639933da8c.trajectory": 1784358660.6713767,
+    "b0b6a369-cd49-4939-9e96-3b639933da8c": 1784358643.105416,
+    "8ca4fbce-4d53-4a42-a9b5-8589ed798f47.trajectory": 1784358153.3100686
+  },
+  "memory": {
+    "path": "C:\\Users\\Administrator\\.qclaw\\workspace\\MEMORY.md",
+    "last_line": 0
+  },
+  "last_full_scan_mtime": 1784358660.6713767,
+  "last_run_at": "2026-07-18T15:15:08+0800"
+}

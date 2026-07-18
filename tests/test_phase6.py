@@ -126,7 +126,11 @@ def test_persist_to_wiki_minimal():
         pwr = {"status": "success", "iterations": [{"planner": "analyze", "worker": "build", "reviewer": "ok"}]}
         result = persist_to_wiki(root, "ship Plan F v8.1", pwr)
         check("returns dict", isinstance(result, dict))
-        check("dialogue_written > 0", result["dialogue_written"] > 0, "got " + str(result["dialogue_written"]))
+        # v1.1.0 redesign: no dialogue/entity pages are written by persist_to_wiki.
+        # 1 session = 1 topic page. dialogue_written/entities_written are
+        # counters for in-memory bookkeeping only (entity count is exposed
+        # for callers that want to surface it in front-matter).
+        check("dialogue_written == 0 (no per-message pages)", result["dialogue_written"] == 0)
         check("entities_written >= 0", result["entities_written"] >= 0)
         check("lint_summary has 8 keys", len(result["lint_summary"]) == 8)
 
@@ -138,6 +142,11 @@ def test_persist_to_wiki_with_topic():
         result = persist_to_wiki(root, "test task about mp", pwr, write_topic_for="mp-test-topic")
         check("topic_written=True", result["topic_written"] is True)
         check("topic exists", (root / "topics" / "mp-test-topic.md").exists())
+        # v1.1.0: dialogue/entity pages are not written. init_wiki() still
+        # creates empty subdirs for backwards compat with wiki_store APIs,
+        # so the assertion is "no .md files" inside those dirs.
+        check("no dialogue pages", not list((root / "dialogue").glob("*.md")) if (root / "dialogue").exists() else True)
+        check("no entity pages", not list((root / "entities").glob("*.md")) if (root / "entities").exists() else True)
 
 
 def test_persist_to_wiki_idempotent_init():
@@ -148,7 +157,9 @@ def test_persist_to_wiki_idempotent_init():
         init_wiki(root)
         pwr = {"status": "success", "iterations": []}
         result = persist_to_wiki(root, "second run", pwr)
-        check("idempotent", result["dialogue_written"] >= 1)
+        # v1.1.0: idempotency now means "no crash, single topic per call"
+        check("idempotent no-crash", result.get("dialogue_written") == 0)
+        check("wiki_root returned", "wiki_root" in result)
 
 
 def test_wiki_integration_step_handles_error():

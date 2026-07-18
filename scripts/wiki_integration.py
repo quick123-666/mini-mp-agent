@@ -83,86 +83,56 @@ def persist_to_wiki(
     if not (root / "index.md").exists():
         init_wiki(root)
 
-    # 1. parse messages
+    # 1. parse messages (kept for entities extraction only — no dialogue writes)
     messages = build_messages_from_pwr(task, pwr_result)
     entries = parse_messages(messages)
 
-    # 2. write dialogues
+    # NOTE (v1.1.0): dialogue pages and individual entity pages are no
+    # longer written here. The LLM Wiki redesign consolidates 1 session into
+    # 1 topic page; entities are recorded as front-matter tags only. The
+    # underlying write_dialogue / write_entity APIs in wiki_store are still
+    # available for direct callers and tests, but the cron ingest path
+    # (scripts/wiki_ingest.py) does not invoke them anymore.
     dialogue_written = 0
-    for e in entries:
-        content = (
-            f"## {e['role']}\n\n"
-            f"{e['content']}\n\n"
-            f"**Intent:** {e['intent']}  \n"
-            f"**Keywords:** {', '.join(e['keywords'])}\n"
-        )
-        write_dialogue(
-            root,
-            e["slug"],
-            content,
-            metadata={"ts": e["ts"]},
-            modes=modes,
-            l1_recipes=l1_recipes,
-            roles=roles,
-            failure_categories=failure_categories,
-        )
-        dialogue_written += 1
-
-    # 3. extract entities from all messages
-    all_text = "\n".join(m["content"] for m in messages if m.get("content"))
-    entities = extract_entities(all_text)
-    grouped = group_by_type(entities)
-
     entities_written = 0
-    seen_slugs = set()
-    for e in entities:
-        if e["entity"].lower() in seen_slugs:
-            continue
-        seen_slugs.add(e["entity"].lower())
-        slug = slugify(e["entity"])
-        if not slug:
-            continue
-        # build a small entity page
-        body = (
-            f"# {e['entity']}\n\n"
-            f"**Type:** {e['type']}  \n"
-            f"**Confidence:** {e['confidence']}  \n\n"
-            f"Extracted from task: _{task[:100]}_\n\n"
-            f"Related: see wiki index.\n"
-        )
-        write_entity(
-            root,
-            slug,
-            body,
-            modes=modes,
-            l1_recipes=l1_recipes,
-            roles=roles,
-            failure_categories=failure_categories,
-        )
-        entities_written += 1
+    entities: List[Dict[str, Any]] = []
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
 
-    # 4. optional topic
+    # 2. extract entities for topic front-matter tags (no page writes)
+    all_text = "\n".join(m["content"] for m in messages if m.get("content"))
+    if all_text:
+        entities = extract_entities(all_text)
+        grouped = group_by_type(entities)
+        entities_written = len({e["entity"].lower() for e in entities})
+
+    # 3. optional topic — now the single page written per session, rich
     topic_written = False
     if write_topic_for:
-        # Build a brief topic page summarizing the run
         pwr_status = pwr_result.get("status", "unknown")
         iterations = len(pwr_result.get("iterations", []))
+        # Top 10 entities (alphabetical), used both as front-matter tags
+        # and as a "Entity tags" section so LCM can grep them.
+        entity_tags = sorted({e["entity"] for e in entities})
         body = (
             f"# {write_topic_for}\n\n"
             f"**PWR status:** {pwr_status}  \n"
             f"**Iterations:** {iterations}  \n"
             f"**Modes:** {', '.join(modes or [])}  \n"
             f"**L1 recipes:** {', '.join(l1_recipes or [])}  \n"
-            f"**Roles:** {', '.join(roles or [])}  \n\n"
-            f"## Task\n\n{task}\n\n"
-            f"## Entities\n\n"
-            + "\n".join(f"- {e['entity']} ({e['type']})" for e in entities[:10])
-            + "\n"
+            f"**Roles:** {', '.join(roles or [])}  \n"
+            f"**Failure categories:** {', '.join(failure_categories or ['none'])}  \n\n"
+            f"## Task\n\n{task[:4000]}\n\n"
+            f"## Entity tags ({len(entity_tags)})\n\n"
+            + (", ".join(f"`{t}`" for t in entity_tags) or "_none_")
+            + "\n\n"
+            f"## Source session\n\n"
+            f"Raw session: `~/.qclaw/agents/main/sessions/<session-id>.jsonl`\n"
         )
         write_topic(
             root,
             slugify(write_topic_for) or "sprint-summary",
             body,
+            metadata={"entity_tags": entity_tags} if entity_tags else None,
             modes=modes,
             l1_recipes=l1_recipes,
             roles=roles,
