@@ -37,3 +37,7 @@ _seed_wiki/
 _demo_wiki/
 # Wiki output dirs (regenerable from session history via wiki_from_session.py)
 _cron_wiki/
+# LLM wiki output (regenerable by running scripts/wiki_ingest.py)
+llmwiki/
+# Lock files from atomic_write.py (runtime artifacts, not source)
+*.lock
