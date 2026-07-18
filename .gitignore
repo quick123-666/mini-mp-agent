@@ -32,3 +32,7 @@ dist/
 # Wiki runtime (Karpathy-style local wiki store)
 wiki/
 wiki.jsonl
+# Wiki demo output (regenerable by running examples/wiki_seed_demo.py)
+_seed_wiki/
+_demo_wiki/
+

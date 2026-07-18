@@ -39,13 +39,17 @@ def main():
 
     section("[1/4] LLM check (must be real, not mock)")
     from scripts.llm_client import get_default_llm, has_real_llm
+    use_mock = os.environ.get("E2E_MOCK", "0") == "1"
     print("has_real_llm = " + str(has_real_llm()))
-    if not has_real_llm():
+    print("E2E_MOCK = " + str(use_mock) + " (set E2E_MOCK=1 to force mock for offline demo)")
+    if not has_real_llm() and not use_mock:
         print("ERROR: no real LLM available; cannot run end-to-end demo.")
+        print("HINT: set E2E_MOCK=1 to run with deterministic mock (graceful degradation mode).")
         return 1
-    llm = get_default_llm()
+    llm = get_default_llm(force_mock=use_mock)
     sample = llm("You are an analyst. Reply in 1 sentence.", "say hi")
     print("sample reply: " + sample[:100])
+    print("llm backend: " + ("mock (forced)" if use_mock else ("real" if has_real_llm() else "mock (auto-fallback)")))
 
     section("[2/4] Run sprint handler (PWR + wiki)")
     t0 = time.time()
