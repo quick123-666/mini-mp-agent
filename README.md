@@ -3,20 +3,24 @@
 # mini-mp-agent
 
 **Single-agent multi-role PWR Loop with Karpathy LLM Wiki**
-*5 modes · 18-method work tree · 0 external dependencies · 307/307 tests PASS*
+*5 modes · 18-method work tree · 0 external dependencies · 310/310 tests PASS*
 
 [![Tests](https://github.com/quick123-666/mini-mp-agent/actions/workflows/test.yml/badge.svg)](https://github.com/quick123-666/mini-mp-agent/actions/workflows/test.yml)
-[![Release v1.0.1](https://img.shields.io/badge/release-v1.0.1-blue.svg)](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.0.1)
+[![Release v1.1.0](https://img.shields.io/badge/release-v1.1.0-blue.svg)](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.1.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#-philosophy)
-[![Tests 307/307](https://img.shields.io/badge/tests-307%2F307-brightgreen.svg)](#-tests)
+[![Tests 310/310](https://img.shields.io/badge/tests-310%2F310-brightgreen.svg)](#-tests)
 
 **Languages**: [English](./README.md) · [中文 (简体)](./README.zh-CN.md)
 
 ---
 
 </div>
+
+> **🆕 v1.1.0 — LLM Wiki redesign** (2026-07-18): 1 session = 1 topic (67x fewer files). New `scripts/wiki_ingest.py` 4-way pipeline (cron-full / mem / session / lint) + atomic state + auto index regen. See [RELEASE_NOTES_v1.1.0.md](./RELEASE_NOTES_v1.1.0.md).
+
+---
 
 > *"LLM writes, Python handles bookkeeping."* — Andrej Karpathy
 

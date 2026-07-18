@@ -3,20 +3,24 @@
 # mini-mp-agent
 
 **单智能体多角色 PWR 循环 + Karpathy LLM Wiki**
-*5 种模式 · 18-方法工作树 · 0 外部依赖 · 307/307 测试通过*
+*5 种模式 · 18-方法工作树 · 0 外部依赖 · 310/310 测试通过*
 
 [![Tests](https://github.com/quick123-666/mini-mp-agent/actions/workflows/test.yml/badge.svg)](https://github.com/quick123-666/mini-mp-agent/actions/workflows/test.yml)
-[![Release v1.0.1](https://img.shields.io/badge/release-v1.0.1-blue.svg)](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.0.1)
+[![Release v1.1.0](https://img.shields.io/badge/release-v1.1.0-blue.svg)](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.1.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#-设计理念)
-[![Tests 307/307](https://img.shields.io/badge/tests-307%2F307-brightgreen.svg)](#-测试)
+[![Tests 310/310](https://img.shields.io/badge/tests-310%2F310-brightgreen.svg)](#-测试)
 
 [English README](./README.md) · [🚀 快速上手](#-快速上手) · [📖 项目结构](#-项目结构) · [🐛 反馈问题](https://github.com/quick123-666/mini-mp-agent/issues)
 
 ---
 
 </div>
+
+> **🆕 v1.1.0 — LLM Wiki 重构** (2026-07-18)：1 session = 1 topic（文件数减少 67 倍）。新的 `scripts/wiki_ingest.py` 四路管线（cron-full / mem / session / lint）+ 原子状态写入 + 索引自动重算。详见 [RELEASE_NOTES_v1.1.0.md](./RELEASE_NOTES_v1.1.0.md)。
+
+---
 
 > *"LLM 负责思考，Python 负责记账。"* — Andrej Karpathy
 
