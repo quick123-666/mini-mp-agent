@@ -12,6 +12,8 @@
 [![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#-philosophy)
 [![Tests 307/307](https://img.shields.io/badge/tests-307%2F307-brightgreen.svg)](#-tests)
 
+**Languages**: [English](./README.md) · [中文 (简体)](./README.zh-CN.md)
+
 ---
 
 </div>
