@@ -336,16 +336,33 @@ def _rebuild_timeline(wiki_root: Path) -> None:
     _atomic_write_json_or_text(wiki_root / "timeline.md", "\n".join(lines) + "\n")
 
 
+def _sanitize_project_slug(p: str) -> str:
+    """Make project slug safe for filesystem (cross-platform).
+
+    - lowercase
+    - replace path separators (/ \\) and Windows-illegal chars (<>:"/\\|?*()[]) with -
+    - collapse multiple dashes
+    - strip leading/trailing dashes
+    - fallback to "uncategorized" if empty
+    """
+    import re
+    s = p.lower().strip()
+    s = re.sub(r'[<>:"/\\|?*()\[\]\s]+', "-", s)
+    s = re.sub(r"-+", "-", s).strip("-")
+    return s or "uncategorized"
+
+
 def _rebuild_by_project(wiki_root: Path) -> None:
     topics = _read_topic_meta(wiki_root)
     by_proj: Dict[str, List[Dict[str, Any]]] = {}
     for m in topics:
-        projects = m.get("projects") or ["(uncategorized)"]
+        projects = m.get("projects") or ["uncategorized"]
         for p in projects:
             p = p.strip()
             if not p:
                 continue
-            by_proj.setdefault(p, []).append(m)
+            slug = _sanitize_project_slug(p)
+            by_proj.setdefault(slug, []).append(m)
     out_dir = wiki_root / "by-project"
     out_dir.mkdir(parents=True, exist_ok=True)
     # remove stale project files (projects with no current topics)
