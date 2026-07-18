@@ -111,6 +111,35 @@ def _filter_new(sessions: list[Path], state: dict) -> list[Path]:
     return new
 
 
+# OpenClaw heartbeat / cron polls share patterns — they produce zero
+# new knowledge, so we drop them. Pattern matches against the first
+# non-empty user message in the session.
+_HEARTBEAT_PATTERNS = (
+    "openclaw heartbeat",
+    "automated heartbeat",
+    "no action needed",
+    "no action required",
+    "no pending tasks",
+    "no tasks pending",
+    "system check",
+    "health check",
+)
+
+
+def _is_heartbeat_session(messages: list[dict]) -> bool:
+    """A session is a heartbeat if the first user message matches a known pattern
+    AND there is no second distinct user message (no real conversation)."""
+    user_msgs = [m["content"] for m in messages if m["role"] == "user"]
+    if not user_msgs:
+        return True
+    first = user_msgs[0].lower()
+    matches = any(pat in first for pat in _HEARTBEAT_PATTERNS)
+    if not matches:
+        return False
+    # heartbeat + 1 follow-up = still treat as heartbeat (no real work)
+    return True
+
+
 def _extract_messages(jsonl_path: Path, max_chars: int, max_messages: int) -> list[dict]:
     """Walk one .jsonl; return [{role, content, ts}] for user/assistant messages only.
 
@@ -219,10 +248,15 @@ def main() -> int:
 
     summary_rows: list[dict] = []
     new_state = dict(state)
+    skipped_hb = 0
     for sp in sessions:
         msgs = _extract_messages(sp, args.max_chars, args.max_messages)
         if not msgs:
             print(f"  [SKIP] {sp.name}: 0 messages")
+            continue
+        if _is_heartbeat_session(msgs):
+            skipped_hb += 1
+            print(f"  [SKIP] {sp.name}: heartbeat session ({len(msgs)} msgs)")
             continue
         task = _build_task(sp.stem, msgs)
         print(f"  [RUN ] {sp.name}: {len(msgs)} messages, {len(task)} chars task")
@@ -265,6 +299,7 @@ def main() -> int:
     wiki_total_topic = sum(1 for r in summary_rows if r["wiki_topic"])
     print()
     print(f"wiki totals (this run): {wiki_total_dlg} dialogue + {wiki_total_ent} entities + {wiki_total_topic} topic")
+    print(f"skipped heartbeats: {skipped_hb}")
     print(f"cumulative: {len(new_state)} sessions indexed")
     print(f"wiki root: {args.wiki_root}")
     return 0
