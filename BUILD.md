@@ -1,6 +1,6 @@
 # BUILD.md — mini-mp-agent 完整工程开发手册
 
-> 严格按以下步骤执行,可以从 0 复制出一份完全相同的 mini-mp-agent v1.0.1 项目。
+> 严格按以下步骤执行,可以从 0 复制出一份完全相同的 mini-mp-agent v1.1.1 项目。
 >
 > **预估工时**: 4-5 小时(含测试)。
 > **依赖**: Python 3.10+,Git,标准库(无 pip 包)。
@@ -36,7 +36,7 @@ mini-mp-agent/
 │   ├── llm_client.py         (Phase 6)
 │   ├── wiki_integration.py   (Phase 6+8)
 │   └── methods_tree.py       (Phase 7)
-└── tests/                    ← 7 个测试文件,共 307 测试
+└── tests/                    ← 8 个测试文件,共 333 测试
     ├── test_mode_router.py
     ├── test_pwr_loop.py
     ├── test_phase3_phase4.py
@@ -67,7 +67,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mini-mp-agent"
-version = "1.0.1"
+version = "1.1.1"
 description = "Single-agent multi-role PWR loop with work method tree, Karpathy LLM Wiki, asyncio"
 requires-python = ">=3.10"
 dependencies = []
@@ -1328,6 +1328,51 @@ def persist_to_wiki_from_pwr(root, task, pwr_result_dict, write_topic_for=None):
 
 ---
 
+## Part 9.5: Phase 9 + 10 — Wiki redesign + Ship patch (v1.1.0 + v1.1.1, 20 分钟)
+
+> v1.1.0 重构 wiki 到 1 session = 1 topic (67× 文件缩减), 加 wiki_ingest 4 路 pipeline。v1.1.1 ship patch 修 .gitignore + slug sanitize + 真 cron。
+>
+> 完整内容见 `RELEASE_NOTES_v1.1.0.md` (6807 字节) + `RELEASE_NOTES_v1.1.1.md` (6978 字节)。
+
+### 9.5.1 `scripts/wiki_ingest.py` (重写)
+
+4 路 ingest: `cron-full` (扫所有 session JSONL, mtime delta), `mem` (扫 MEMORY.md 新段), `session` (单 session 手动触发), `auto` (路由决策)。
+每 session 仅写 1 个 topic 文件 (entity 压缩进 front-matter `entity_tags:`)。
+`_is_heartbeat_session()` 过滤 OpenClaw 心跳 (12 关键词)。
+
+### 9.5.2 `scripts/wiki_lint.py` (新增)
+
+8 步 lint: orphans / stale (>90d) / contradictions (D-/M- 多版本冲突) / mode coverage。
+`_rebuild_indexes()` 每次跑重算 index.md / timeline.md / by-project/。
+
+### 9.5.3 `scripts/cron_llmwiki.sh` (新增 wrapper)
+
+bash, 3h 间隔, `hour==23` 跳 cron-full, 其他增量 + lint。
+OpenClaw cron job `4bfd77ef-5728-4c0e-bc57-0f3f6f2712bd` (isolated agentTurn, payload = bash 该脚本)。
+
+### 9.5.4 `_sanitize_project_slug()` (Phase 10)
+
+```python
+import re
+def _sanitize_project_slug(p: str) -> str:
+    s = p.lower().strip()
+    s = re.sub(r'[<>:"/\\|?*()\[\]\s]+', "-", s)
+    s = re.sub(r"-+", "-", s).strip("-")
+    return s or "uncategorized"
+```
+
+避免 Windows 非法字符文件名, 跨平台安全。
+
+### 9.5.5 `.gitignore` 加 `llmwiki/` + `*.lock` (Phase 10)
+
+atomic_write 的 .lock 文件 + llmwiki runtime 目录不入 git。
+
+### 9.5.6 `tests/test_by_project_slug.py` (23 测试)
+
+`lowercase` / `trim spaces` / `slash → dash` / `backslash → dash` / `angle brackets` / `colon` / `double quote` / `pipe` / `question mark` / `asterisk` / `parens round` / `square brackets` / `spaces collapse` / `tabs and newlines` / `collapse dashes` / `leading/trailing dash stripped` / `empty fallback` / `only special chars` / `only dashes` / `kebab-case preserved` / `CamelCase lowercased` / `mixed case + path`。**23/23 PASS**。
+
+---
+
 ## Part 9: Phase 8 — Wiki 分类(v1.0.1,30 分钟)
 
 > 已在 Part 6.2 `wiki_store.py` 介绍新增 API。这里只补 Phase 8 专测。
@@ -1385,8 +1430,8 @@ def test_persist_to_wiki():
 
 ```markdown
 # mini-mp-agent
-> Version 1.0.1 — Single-agent multi-role PWR loop + work method tree + Karpathy LLM Wiki + asyncio
-> 307/307 tests PASS · MIT License · 0 external dependencies
+> Version 1.1.1 — Single-agent multi-role PWR loop + work method tree + Karpathy LLM Wiki + asyncio
+> 333/333 tests PASS · MIT License · 0 external dependencies
 
 [full README content - see package README.md]
 ```
@@ -1402,6 +1447,22 @@ def test_persist_to_wiki():
 ### 10.4 `CHANGELOG.md`
 
 ```markdown
+## [1.1.1] - 2026-07-18
+Post-release ship patch for v1.1.0 (D-ShipCompletionDefinition-001 follow-up).
+- .gitignore added llmwiki/ + *.lock
+- _sanitize_project_slug() cross-platform filesystem safety
+- Real OpenClaw cron job 4bfd77ef (3h interval)
+- 23 new tests → 333/333 PASS
+- See RELEASE_NOTES_v1.1.1.md
+
+## [1.1.0] - 2026-07-18
+LLM Wiki redesign (Phase 9): 1 session = 1 topic (67× fewer files).
+- scripts/wiki_ingest.py 4-way pipeline (cron-full/mem/session/auto)
+- scripts/wiki_lint.py 8th lint step
+- scripts/cron_llmwiki.sh wrapper (hour==23 cron-full)
+- Heartbeat session filter (12 keywords)
+- See RELEASE_NOTES_v1.1.0.md
+
 ## [1.0.1] - 2026-07-18
 Wiki method-tree classification (Phase 8): ... [详细]
 
@@ -1414,7 +1475,7 @@ Initial stable release (Phase 1-7): ...
 ```json
 {
   "name": "mini-mp-agent",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "type": "single-agent-multi-role-loop",
   ...
 }
@@ -1442,10 +1503,11 @@ $ for t in tests/test_*.py; do
 51/51 PASS, 0 FAIL
 78/78 PASS, 0 FAIL
 50/50 PASS, 0 FAIL
-35/35 PASS, 0 FAIL
+38/38 PASS, 0 FAIL
 22/22 passed, 0 failed
+23/23 passed, 0 failed
 
-TOTAL: 307/307 PASS
+TOTAL: 333/333 PASS
 ```
 
 ### 11.2 跑 CLI 检查
@@ -1477,10 +1539,14 @@ SUCCESS
 
 ```bash
 $ git add -A
-$ git commit -m "v1.0.1: complete release (8 phases, 307 tests)"
-$ git tag -a v1.0.1 -m "v1.0.1 stable release"
+$ git commit -m "v1.1.1: complete release (10 phases, 333 tests)"
+$ git tag -a v1.1.1 -m "v1.1.1 stable release"
 $ git log --oneline
-1fb1805 (HEAD -> main, tag: v1.0.1) v1.0.1: complete release
+c99b718 (HEAD -> main, tag: v1.1.1) chore(release): bump to v1.1.1
+ae00553 (HEAD -> main) fix(wiki): sanitize project slugs for cross-platform filesystem safety
+e22308f fix(gitignore): untrack llmwiki/ + *.lock runtime artifacts
+66ef24e docs: README + Changelog version bump
+6a220f9 (tag: v1.1.0) Phase 9: wiki redesign + cron
 (earlier commits from each phase)
 ```
 
@@ -1565,7 +1631,7 @@ if inspect.iscoroutine(ret):  # 调一次看返回值类型
 | Phase 8 | wiki classification | 1+1 | ~200 | 22 | 30 min |
 | Docs | 4 MD + JSON + SKILL | 7 | ~28KB | - | 15 min |
 | Final verify | tag + commit | - | - | - | 10 min |
-| **Total** | | **42** | **~3300** | **307** | **~5h** |
+| **Total** | | **44** | **~3500** | **333** | **~5h** |
 
 ## 附录 B: 关键设计原则(抄下来贴在备忘)
 
@@ -1591,6 +1657,6 @@ if inspect.iscoroutine(ret):  # 调一次看返回值类型
 
 ---
 
-**完工**: 跟着这份 BUILD.md 走,从 0 到 v1.0.1 包,5 小时能 ship 一份**完整可运行**的 mini-mp-agent。
+**完工**: 跟着这份 BUILD.md 走,从 0 到 v1.1.1 包,5 小时能 ship 一份**完整可运行**的 mini-mp-agent。
 
 如果卡在哪一步,直接 `cat <file>` 看包里的源文件,逐行对照。
