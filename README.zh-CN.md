@@ -119,33 +119,14 @@
 
 ### 树形结构（4 层 · 18 节点）
 
-```
-L0 模式          │ 5 个节点（调度决策）
-├── m_qa         │ 单轮问答
-├── m_task       │ 结构化任务
-├── m_discuss    │ 5 人格辩论
-├── m_auto       │ 完整 PWR 循环（默认）
-└── m_sprint     │ PWR + wiki recall/persist
-       │
-L1 配方          │ 5 个节点（模式内原语）
-├── decompose_task
-├── plan_task
-├── execute_task
-├── review_task
-└── reflect_task
-       │
-L2 子步骤        │ 5 个节点（一次 RECIPE 调用）
-├── wiki_recall
-├── wiki_persist
-├── score_output
-├── extract_entities
-└── lint_wiki
-       │
-L3 原语          │ 3 个节点（纯标准库操作）
-├── atomic_write       │ tmp + os.replace + 文件锁 + 重试 5 次
-├── parallel_execute   │ asyncio.gather / run_in_executor
-└── early_stop         │ 评分阈值检查
-```
+树分四层，共 **18 个节点**。每一层代表一个不同的决策点——从"走哪个模式？"一直下钻到"用哪个标准库原语？"。
+
+- **L0 — 模式**（5 个）。调度决策：`m_qa`、`m_task`、`m_discuss`、`m_auto`、`m_sprint`。
+- **L1 — 配方**（5 个）。模式内的工作原语：`decompose_task`、`plan_task`、`execute_task`、`review_task`、`reflect_task`。
+- **L2 — 子步骤**（5 个）。一次 `RECIPES.actions` 调用：`wiki_recall`、`wiki_persist`、`score_output`、`extract_entities`、`lint_wiki`。
+- **L3 — 原语**（3 个）。纯标准库操作：`atomic_write`（tmp + `os.replace` + 文件锁 + 重试 5 次）、`parallel_execute`（`asyncio.gather` / `run_in_executor`）、`early_stop`（评分阈值检查）。
+
+上层节点通过声明的 `dependencies` 调用下层节点。完整图：18 个节点、20 条边，由 `tree.validate()` 校验。
 
 ### 30 秒上手 API
 
@@ -361,33 +342,15 @@ LLM 客户端从 `~/.config/agent-platform/agent-config.json` 读取配置：
 
 ## 🛣️ 路线图
 
-完整的提议列表（以及已知问题）请见 [open issues](https://github.com/quick123-666/mini-mp-agent/issues)。
+本项目目前**暂无正式路线图**。v1.0.1 已经把工作方法树、PWR 循环、wiki 分类全部 ship，下一步的方向由用户反馈和 GitHub Issues 驱动。
 
-### v1.0.x — 发布收尾（当前阶段）
-- [x] 打 tag `v1.0.1` + 推送到 GitHub
-- [x] CI 工作流（`.github/workflows/test.yml`）
-- [x] `RELEASE_NOTES_v1.0.1.md`
-- [x] `.gitignore` + `RELEASE_CHECKLIST.md`
-- [x] `README.md` 重写为 Best-README-Template 风格
-- [x] `README.zh-CN.md` 中文版 README
+如果你想提建议：
 
-### v1.1 — 方法到动作
-- [ ] 把 `RECIPES.actions` 接到真实 handler
-- [ ] 由 LLM 驱动从树中选方法
-- [ ] 按方法跟踪评分
+- 💡 [提功能请求](https://github.com/quick123-666/mini-mp-agent/issues/new?labels=enhancement)
+- 🐛 [报告 bug](https://github.com/quick123-666/mini-mp-agent/issues/new?labels=bug)
+- 💬 [发起讨论](https://github.com/quick123-666/mini-mp-agent/discussions/new)
 
-### v1.2 — GitHub 集成
-- [ ] MCP：把 issue / PR 灌入 `wiki_recall`
-- [ ] 自动用 `m_review` 评分评论 PR
-
-### v2.0 — 分布式编排
-- [ ] 通过 ACP / IPC 跨多个 `mini-mp-agent` 进程
-- [ ] 跨进程 wiki 合并 + 冲突消解
-
-### 未来
-- [ ] 项目 Logo + 动画演示 GIF
-- [ ] 实时 PWR trace 看板
-- [ ] 可插拔 LLM provider（OpenAI、Ollama、自定义）
+关于 v1.0.1 已交付的内容，详见 [`RELEASE_NOTES_v1.0.1.md`](./RELEASE_NOTES_v1.0.1.md)。
 
 ---
 

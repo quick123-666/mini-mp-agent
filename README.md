@@ -121,33 +121,14 @@ Most "agent frameworks" leave the agent to decide which tool to call next. **min
 
 ### Tree shape (4 levels, 18 nodes)
 
-```
-L0 mode           │ 5 nodes (dispatch decision)
-├── m_qa          │ single-shot Q&A
-├── m_task        │ structured task execution
-├── m_discuss     │ 5-persona debate
-├── m_auto        │ full PWR Loop (default)
-└── m_sprint      │ PWR + wiki recall/persist
-       │
-L1 recipe         │ 5 nodes (per-mode primitive)
-├── decompose_task
-├── plan_task
-├── execute_task
-├── review_task
-└── reflect_task
-       │
-L2 sub-step       │ 5 nodes (one RECIPE call)
-├── wiki_recall
-├── wiki_persist
-├── score_output
-├── extract_entities
-└── lint_wiki
-       │
-L3 primitive      │ 3 nodes (pure stdlib op)
-├── atomic_write  │ tmp + os.replace + per-file lock + retry 5
-├── parallel_execute │ asyncio.gather / run_in_executor
-└── early_stop    │ score threshold check
-```
+The tree has four levels, totaling **18 nodes**. Each level represents a different decision point — from "which mode?" down to "which stdlib primitive?".
+
+- **L0 — Mode** (5 nodes). The dispatch decision: `m_qa`, `m_task`, `m_discuss`, `m_auto`, `m_sprint`.
+- **L1 — Recipe** (5 nodes). The per-mode workflow primitive: `decompose_task`, `plan_task`, `execute_task`, `review_task`, `reflect_task`.
+- **L2 — Sub-step** (5 nodes). A single `RECIPES.actions` call: `wiki_recall`, `wiki_persist`, `score_output`, `extract_entities`, `lint_wiki`.
+- **L3 — Primitive** (3 nodes). Pure stdlib operations: `atomic_write` (tmp + `os.replace` + per-file lock + retry 5), `parallel_execute` (`asyncio.gather` / `run_in_executor`), `early_stop` (score threshold check).
+
+Higher-level nodes call into lower-level nodes through declared `dependencies`. The full graph: 18 nodes, 20 edges, validated by `tree.validate()`.
 
 ### Tree API in 30 seconds
 
@@ -362,32 +343,15 @@ If the file is missing, `llm_client` **falls back to a deterministic mock** so a
 
 ## 🛣️ Roadmap
 
-See the [open issues](https://github.com/quick123-666/mini-mp-agent/issues) for a full list of proposed features (and known issues).
+This project currently has **no formal roadmap**. The work method tree, PWR loop, and wiki classification are all shipped in v1.0.1 — the next direction will be driven by user feedback and GitHub Issues.
 
-### v1.0.x — Release polish (current)
-- [x] Tag `v1.0.1` + push to GitHub
-- [x] CI workflow (`.github/workflows/test.yml`)
-- [x] `RELEASE_NOTES_v1.0.1.md`
-- [x] `.gitignore` + `RELEASE_CHECKLIST.md`
-- [x] `README.md` rewrite to Best-README-Template structure
+If you'd like to suggest a direction:
 
-### v1.1 — Method-to-action
-- [ ] Wire `RECIPES.actions` to actual handlers
-- [ ] LLM-driven method selection from tree
-- [ ] Score-per-method tracking
+- 💡 [Open a feature request](https://github.com/quick123-666/mini-mp-agent/issues/new?labels=enhancement)
+- 🐛 [Report a bug](https://github.com/quick123-666/mini-mp-agent/issues/new?labels=bug)
+- 💬 [Start a discussion](https://github.com/quick123-666/mini-mp-agent/discussions/new)
 
-### v1.2 — GitHub integration
-- [ ] MCP: issue / PR fetch into `wiki_recall`
-- [ ] Auto-comment PR with `m_review` score
-
-### v2.0 — Distributed orchestration
-- [ ] Multiple `mini-mp-agent` processes via ACP / IPC
-- [ ] Cross-process wiki merge with contradiction resolution
-
-### Future
-- [ ] Project logo + animated demo gif
-- [ ] Web dashboard for live PWR trace inspection
-- [ ] Pluggable LLM provider (OpenAI, Ollama, custom)
+For context on what shipped in v1.0.1, see [`RELEASE_NOTES_v1.0.1.md`](./RELEASE_NOTES_v1.0.1.md).
 
 ---
 
