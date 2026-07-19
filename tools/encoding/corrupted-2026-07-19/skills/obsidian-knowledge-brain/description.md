@@ -1,0 +1,3 @@
+﻿# obsidian-knowledge-brain v4.0
+
+An AI agent skill that remembers every technical decision and bug fix across your sessions 鈥?and learns from them across projects. v4.0 adds a global atom table: when the same pitfall occurs in 鈮? projects, it's promoted to all projects automatically. Zero dependencies, platform-adaptive (Claude Code full auto, Cursor/Gemini/Codex manual). / 璁?AI Agent 璺ㄤ細璇濊法椤圭洰璁颁綇鎶€鏈喅绛栧拰閿欒淇鐨?Skill銆倂4.0 澧炲姞鍏ㄥ眬鍘熷瓙琛細鍚屼竴鍧戝湪 鈮? 涓」鐩腑澶嶇幇鏃惰嚜鍔ㄥ悓姝ュ叏閮ㄩ」鐩€傞浂渚濊禆锛岃法骞冲彴閫傞厤銆?
