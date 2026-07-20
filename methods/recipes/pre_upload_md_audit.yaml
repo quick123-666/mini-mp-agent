@@ -186,3 +186,17 @@ related_methods:
 # === 决策 ID ===
 decision_id: D-Method-PreUploadMDAudit-001
 ship_date: 2026-07-20
+
+
+## 严格模式 (Strict Mode, 2026-07-20 15:13 立, 15:16 mini-mp-agent 同步)
+
+### RULE-AuditStrict-001 配套
+- 本方法可被强制执行 (call 必须, 不允许 skip)
+- commit msg 必含 `audit: 6 步已走 (时间戳)` 或 `audit: qa 例外 (原因)`
+- 例外清单: 1 行 .gitignore / 1 行 MEMORY 改动 / 故障恢复 / qa 模式
+- 不走 audit 不允许 git commit (mini-mp-agent push 强制)
+
+### 自动化 (未来)
+- git hook 自动 grep "audit:" 字段
+- 没命中: 拒绝 commit, 提示走 audit
+
