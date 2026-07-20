@@ -1,0 +1,188 @@
+name: M-PreUploadMDAudit-001
+title: Pre-Upload Markdown Audit (上传前 md 体检)
+version: 1.0.0
+author: mini-mp-agent
+created: 2026-07-20
+maturity: stable
+role: shared
+trigger:
+  - "上传 GitHub"
+  - "git push 前"
+  - "发布 release 前"
+  - "点检所有 md"
+  - "检查 md 是否过期"
+  - "内容缺失"
+  - "内容过时"
+
+# === 触发场景 ===
+scenario: |
+  任何 git push / 上传 GitHub / 发布 release 之前, 先在本地检查所有 md 文件,
+  找出 (1) 对话/事件中产生但没记录到 md 的内容, (2) md 中已写过但被推翻/过期的内容,
+  先更新 md, 再上传. 避免公开仓库里有不一致/缺失/过时的内容.
+
+# === 6 步流程 ===
+steps:
+  - name: "1. Sense (问 1 件事)"
+    description: |
+      确认审计范围:
+      - 单项目 (mini-mp-agent / workspace-mini-mp / LAAP)
+      - 还是全盘 (3 项目一起)
+      - 是否包含 wiki/ 目录 (默认含, 按 wiki recall 3-phase)
+    output: 范围 + 是否含 wiki
+
+  - name: "2. Locate (定位 md)"
+    description: |
+      用 M-MDIndex-001 已建立的清单 + Python os.walk 扫当前项目:
+      - 列出所有 .md 路径 + 大小 + mtime
+      - 区分 tracked (git ls-files) vs untracked vs gitignored
+      - 区分系统级 (MEMORY/AGENTS/SOUL) vs 历史笔记 vs L2 方法 vs wiki
+    output: 完整 md 清单
+
+  - name: "3. Frame (4 类检查)"
+    description: |
+      设计 4 类检查项:
+      
+      A. **内容缺失** (Missing): 对话/事件产生但没记录到 md
+         - 看最近 N 次对话 (lcm_grep / session history)
+         - 看 git log 最近 N commits (找未登记的 D-XXX)
+         - 对比 issues-tracking.md 是否漏掉 ISSUE
+         
+      B. **内容过期** (Stale): md 写过但被推翻/更新
+         - 看最近 git log, 找 commit msg 提到的"修复"/"变更"
+         - 对比 MD_INDEX.md 是否还有指向已删文件的引用
+         - 看 MEMORY.md 段头/段尾的时间戳
+         
+      C. **格式错误** (Format): GBK / BOM / CRLF / 缺 newline
+         - Format-Hex 看前 3 字节 (EF BB BF = UTF-8 BOM, FF FE = UTF-16 LE)
+         - 统计 \r\n 数 (应为 0, Windows 警告 LF -> CRLF)
+         - 检查末尾 newline
+         - RULE-Verify-005 + RULE-Diagnose-006 配套
+         
+      D. **决策 ID 不一致** (D-ID Mismatch): 提到但没注册
+         - grep "D-[A-Z][a-z]+-[0-9]+" 所有 md, 收集所有 D-ID
+         - 对比 issues-tracking.md 的注册表
+         - 缺失的 → 补登记; 多余的 → 标记 [UNUSED]
+    output: 4 类问题清单 (各 0-N 个)
+
+  - name: "4. Audit (逐项检查)"
+    description: |
+      按 4 类清单逐一处理:
+      
+      **A. 内容缺失**:
+      - 缺失对话 → 写到对应笔记 (laap-*/cron_*/verification 等)
+      - 缺失 D-ID → 写到 issues-tracking.md
+      - 缺失 MEMORY 段 → 加新 RULE/METHOD/用户偏好段
+      - 缺失 wiki 实体 → 走 M-BuildLLMWiki-001
+      - 缺失 wiki 引用 → 更新 by-project/*.md
+      
+      **B. 内容过期**:
+      - MD_INDEX.md 引用已删文件 → 删引用
+      - MEMORY.md 段头时间戳过期 → 更新
+      - RELEASE_STATUS.md 版本过时 → 改
+      - 已 ship 的方法/规则仍标 [PENDING] → 改 [SHIPPED]
+      
+      **C. 格式错误**:
+      - UTF-8 BOM → 删 BOM (RULE-Encoding-001)
+      - GBK 字节 → 转 UTF-8 (RULE-Encoding-001)
+      - CRLF → LF (autocrlf=input 或 .gitattributes eol=lf)
+      - 缺末尾 newline → 加
+      
+      **D. D-ID 不一致**:
+      - md 提到 D-XXX 但 issues-tracking.md 没注册 → 加 ISSUE
+      - issues-tracking.md 注册但 md 没引用 → 标 [UNUSED] 或补引用
+      - D-ID 编号冲突 → 重命名
+    output: 修复清单 (commit-ready)
+
+  - name: "5. Fix (先 commit 后 push)"
+    description: |
+      强制顺序: **先在本地 commit 修复, 再 push**.
+      
+      a. 用 RULE-Encoding-014 走 Python subprocess + git -F - + LANG=C.UTF-8
+      b. 验证 commit msg UTF-8 (hex dump 抽查 1-2 个中文短语)
+      c. git log 看 commit 列表
+      d. git status 看 working tree 是否 clean
+      e. **确认完全 green 后** 才允许 push
+      f. push 前再 diff 一次 (git diff origin/main..HEAD --stat)
+      
+      违反顺序 = 高风险 (公开仓库会暴露未修复的问题)
+    output: clean working tree + N 个修复 commits
+
+  - name: "6. Reflect (反思)"
+    description: |
+      写反思到 issues-tracking.md:
+      - 本次发现哪几类问题
+      - 哪类最常见 (更新检查清单优先级)
+      - 是否要加新 RULE 防同类问题
+      - 是否要更新 M-MDIndex-001 / M-BuildLLMWiki-001
+      - 维护原则: 每周/每月做一次 PreUploadMDAudit
+    output: 反思笔记
+
+# === 关键约束 ===
+constraints:
+  - "强制顺序: audit -> fix -> commit -> push (不可逆)"
+  - "绝不允许 unfixed 状态下 push"
+  - "中文 commit msg 走 Python utf-8 stdin (RULE-Encoding-014)"
+  - "GBK / BOM / CRLF 必须在 commit 前修干净 (RULE-Encoding-001)"
+  - "决策 ID 必须双向引用 (md 提到 + issues-tracking 注册)"
+  - "PENDING 状态的 D-ID 不能入库 (除非显式标 PENDING 是公开状态)"
+
+# === 决策 ID 关联 ===
+related_decisions:
+  - D-Rule-Encoding-014 (commit msg UTF-8)
+  - D-Rule-Encoding-001 (弃用 GBK)
+  - D-Rule-Verify-005 (写后读回)
+  - D-Rule-Diagnose-006 (怀疑编码错先 hex)
+  - D-MDIndex-001 (md 索引基础)
+  - D-BuildLLMWiki-001 (wiki 实体基础)
+  - D-CrossProjectPurify-001 (跨项目净化)
+  - D-SafeRemove-001 (删除备份)
+
+# === 已知误用 ===
+misuses:
+  - "不要跳过 audit 直接 push (会暴露未修复问题)"
+  - "不要用 PowerShell git commit (GBK 风险)"
+  - "不要只检查 tracked 文件 (untracked 也要看)"
+  - "不要忽略 wiki/ 目录 (按 gitignore 排除但要单独审计)"
+  - "不要把 PENDING 决策写进公开 md"
+
+# === 输出模板 ===
+output_template: |
+  ## Pre-Upload Audit Report (YYYY-MM-DD)
+  
+  范围: {范围}
+  触发: {触发事件}
+  
+  ### A. 内容缺失 (X 个)
+  - [ ] {D-XXX-NNN} -> 加到 issues-tracking
+  - [ ] {新方法} -> 写到 methods/recipes/
+  - [ ] {新 RULE} -> 加到 MEMORY L0/L1
+  
+  ### B. 内容过期 (X 个)
+  - [ ] {md 引用已删文件} -> 删引用
+  - [ ] {PENDING -> SHIPPED} -> 改状态
+  
+  ### C. 格式错误 (X 个)
+  - [ ] {GBK/BOM/CRLF} -> 转 UTF-8
+  
+  ### D. 决策 ID 不一致 (X 个)
+  - [ ] {D-XXX 提到但没注册} -> 加 ISSUE
+  - [ ] {D-XXX 注册但没引用} -> 标 UNUSED
+  
+  ### 修复结果
+  - N 个 commit
+  - working tree clean: ✅
+  - 字节验证: ✅ UTF-8
+
+# === 关联方法 ===
+related_methods:
+  - M-MDIndex-001 (md 索引)
+  - M-BuildLLMWiki-001 (建 wiki)
+  - M-LintWiki-001 (lint wiki)
+  - M-SafeRemove-001 (备份删除)
+  - M-CrossProjectPurify-001 (跨项目净化)
+  - M-SyncDevPlan-001 (双表同步)
+  - M-SyncCronDoc-001 (cron 文档同步)
+
+# === 决策 ID ===
+decision_id: D-Method-PreUploadMDAudit-001
+ship_date: 2026-07-20
