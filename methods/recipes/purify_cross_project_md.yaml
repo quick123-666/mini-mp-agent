@@ -1,0 +1,96 @@
+node_id: purify_cross_project_md
+name: Purify Cross-Project MD (跨项目 md 净化 — 提取其他项目详细回原项目)
+level: 2
+purpose: 当一个项目的 md 里混入了其他项目的技术详细 (端口/路径/代码位置/启动命令), 走此方法把详细提取回原项目, 主项目只保留引用+概要
+agent_role: shared
+inputs:
+  - "target_project (str, 主项目路径, 例如 'mini-mp-agent')"
+  - "foreign_project_name (str, 混入的项目名, 例如 'LAAP')"
+  - "foreign_project_root (str, 混入项目的工作区根, 例如 'E:\\新建文件夹\\laap\\')"
+  - "extract_targets (list[str], 待提取的关键词, 例如 ['engine_registry.py', 'ari_self_model', '8000', '11546'])"
+outputs:
+  - "LAAP/<path>.md (新写, 含提取出的详细)"
+  - "mini-mp-agent/<原文件>.md (改, 详细 → 概要 + 引用链接)"
+  - "methods/recipes/purify_cross_project_md.yaml (本方法节点)"
+dependencies:
+  - "Python regex 关键词扫描"
+  - "Python utf-8 写入"
+failure_modes:
+  - "over_extract"          # 提走过多, 失去 mini-mp-agent wiki 的"项目快照"价值
+  - "broken_link"           # 提取后原文件留 dead reference
+  - "encoding_mojibake"     # 走 Python utf-8
+  - "wrong_source"          # 提取的不是 LAAP 的, 误判混入
+selector_keywords:
+  - "规范化整理"
+  - "md 混入"
+  - "项目混入"
+  - "其他项目详细"
+  - "净化"
+maturity: stable
+evidence: |
+  首例触发: 用户 2026-07-20 13:41 "如果一个项目的md里混入了其他项目的详细应该进行规范化整理"
+  首例执行:
+    - 主项目: mini-mp-agent (49 业务 md, wiki/ 含 LAAP 详细 278+219=497 处)
+    - 混入项目: LAAP (有自己工作区 E:\新建文件夹\laap\, 但**无独立 md 索引**)
+    - 提取方向: LAAP 详细 → E:\新建文件夹\laap\wiki\ (新建)
+    - mini-mp-agent wiki 留概要 + 引用回 LAAP
+notes: |
+  6 步流程:
+
+  1. **Sense** (1m):
+     - 问用户:
+       a) 主项目路径 (默认当前 workspace)
+       b) 混入的"外项目"名 (LAAP? Aris? Ruflo?)
+       c) 外项目是否有独立工作区 (如 E:\新建文件夹\laap\)
+       d) 提取后回哪里 (外项目 wiki/ 还是 workspace-mini-mp LAAP 笔记段)
+     - 决定范围 (一次性 vs 规则化)
+
+  2. **Locate** (2m):
+     - 扫主项目下所有 md, 用关键词 (端口号/路径/代码文件名) 定位混入文件
+     - 输出: [(file_path, 关键词命中次数)]
+
+  3. **Frame** (2m):
+     - 分类提取:
+       - **代码/路径详细** (engine_registry.py / ari_self_model.py / 端口号): 提取
+       - **状态快照** (4 端口全 NOT LISTEN): 提取 (LAAP 自己的状态)
+       - **项目实体描述** (LAAP 是 mini-mp-agent 框架的第一个完整 demo): 保留概要
+       - **引用关系** (mini-mp-agent 用 LAAP 演示 wiki_recall): 保留
+     - 提取回的外项目 md 命名:
+       - `<项目名>_in_<主项目>_context.md` (从主项目视角的概要)
+       - 或者按时间戳 `<YYYY-MM-DD>-<主项目>-<外项目>-extraction.md`
+
+  4. **Extract** (5m):
+     - 在外项目根 (如 E:\新建文件夹\laap\) 建 `wiki/` 目录
+     - 写提取的详细 md (含端口状态/路径/代码位置/启动命令/P0 阻塞)
+     - 走 Python utf-8
+
+  5. **Slim** (3m):
+     - 改主项目的 md: 详细 → 概要 + 链接
+     - 概要样例:
+       "LAAP (Aris) 详细状态: 端口/P0/P1/代码诊断 → 见 LAAP 项目 wiki/2026-07-20-mini-mp-context.md"
+     - 主项目 wiki 留: "LAAP 是 mini-mp-agent 的第一个完整 demo, 完整状态见独立 wiki"
+
+  6. **Reflect** (2m):
+     - 写 ISSUE: mini-mp-agent wiki LAAP 详细净化
+     - 写反思:
+       - 为什么会出现这种混入 (因为 LAAP 是首例, 没有独立 wiki)
+       - 后续原则: 任何"外项目详细"应在该外项目自己的 wiki/, 主项目只保留概要
+     - 更新 MD_INDEX.md (主项目和 LAAP 项目双索引)
+     - 后续涉及 LAAP 的 mini-mp-agent 任务必先查 LAAP 自己的 wiki/
+
+  关键设计:
+  - **不删除主项目的全部 LAAP 内容**, 只把"详细"提走, "概要/引用"保留
+  - **提取后 LAAP 项目必须有独立 wiki/** (否则断链)
+  - **双索引更新**: mini-mp-agent/MD_INDEX.md 标 "已净化 → 见 LAAP wiki", LAAP/MD_INDEX.md 新建
+  - **后续维护**: mini-mp-agent 再涉及 LAAP 时, 先 recall LAAP/MD_INDEX.md (12 个 wiki)
+
+decision_id: D-CrossProjectPurify-001
+created: 2026-07-20
+ship: 2026-07-20
+linked_rules:
+  - "RULE-MDIndex-013 (L0 必读)"
+  - "RULE-Encoding-001 (utf-8 写)"
+  - "RULE-SafeRemove-012 (md 删除走备份)"
+linked_methods:
+  - "M-MDIndex-001 (建 MD 索引)"
+  - "M-SafeRemove-001 (删除前备份)"

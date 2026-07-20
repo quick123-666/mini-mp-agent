@@ -1,0 +1,94 @@
+node_id: build_md_index
+name: Build MD Index (建立项目 MD 索引 + 联动 MEMORY 必读规则)
+level: 2
+purpose: 当项目有 N 个 md 但没有统一索引时, 必走此方法建立 MD_INDEX.md + 在 MEMORY 加必读规则
+agent_role: shared
+inputs:
+  - "scope (str, 项目范围: 'workspace-mini-mp' / 'mini-mp-agent' / 其他)"
+  - "categories (list[str], 自定义分类, 默认 5 类: A 系统 / B L1 / C 主题 / D 笔记 / E memory)"
+  - "high_priority_files (list[str], 用户指定的"必读 N 个"文件列表, 默认从分类中提取)"
+outputs:
+  - "MD_INDEX.md (项目根, 含全部 md 的功能/作用 + 读优先级)"
+  - "MEMORY.md 更新 (L0 加 RULE-MDIndex-XXX 必读规则)"
+  - "issues-tracking.md 更新 (决策 ID 注册)"
+dependencies:
+  - "os.walk"
+  - "datetime"
+  - "Python subprocess (绕开 PowerShell GBK)"
+failure_modes:
+  - "encoding_mojibake"        # 走 Python utf-8, 不走 PowerShell WriteAllText
+  - "stale_index"              # md 新增/删除未同步, 元规则段声明必同步
+  - "wrong_category"           # 用 mtime 倒序 + 大小, 不靠猜
+  - "circular_rule"            # MD_INDEX 引用 MEMORY, MEMORY 引用 MD_INDEX (良性循环, 但要在元规则说明)
+selector_keywords:
+  - "优化md"
+  - "规范化md"
+  - "梳理md"
+  - "md索引"
+  - "md清单"
+  - "所有md在哪"
+  - "必读的md"
+maturity: stable
+evidence: workspace-mini-mp/MD_INDEX.md (13:30 ship), mini-mp-agent/MD_INDEX.md (TBD)
+notes: |
+  6 步流程:
+
+  1. **Sense** (30s):
+     - 问用户 1 件事: 范围 (单项目还是全盘)
+     - 默认: 单项目 = 当前 workspace 根目录
+
+  2. **Locate** (1m):
+     - `os.walk` 扫所有 .md 文件
+     - 收集: 相对路径 / 大小 / mtime
+     - 输出: list[(rel, size, mtime)]
+
+  3. **Frame** (2m):
+     - 设计分类 (默认 5 类):
+       - A 系统级 (OpenClaw 注入 Project Context)
+       - B L1 联动 (issues-tracking 等)
+       - C 主题笔记 (按项目: LAAP / cron / llmwiki 等)
+       - D 其他任务笔记
+       - E memory 段 (memory/YYYY-MM-DD.md)
+     - 读优先级 L0~L4:
+       - L0 必读: MEMORY.md + MD_INDEX.md
+       - L0 联动: issues-tracking.md
+       - L1: 系统级注入
+       - L2: 主题笔记 (mtime 倒序)
+       - L3: 历史笔记 (按需)
+       - L4: memory 段
+
+  4. **Build** (3m):
+     - 写 MD_INDEX.md, 含:
+       - 顶部: 总数 + 维护原则 + 关联 RULE
+       - 读优先级表
+       - 全清单 (按类别分组, mtime 倒序)
+       - 统计段 (各类数量 + 总大小)
+       - 元规则段 (7 条)
+     - 用 Python `open(..., encoding="utf-8")` 写
+
+  5. **Sync** (2m):
+     - 改 MEMORY.md L0 段加 RULE-MDIndex-XXX
+     - 改 issues-tracking.md 注册新 D-ID
+     - 旧规则如有 "X 必读 Y 文件" 字样, 按新分类计数更新 (如 "LAAP 必读 3" → "LAAP 必读 12")
+
+  6. **Reflect** (1m):
+     - 写反思: 踩了什么坑 (典型: GBK, mtime 漂移)
+     - 写后续维护原则: 新增/删除 md 必同步 MD_INDEX
+     - 写入 issues-tracking.md
+
+  关键避坑:
+  - 走 Python subprocess, sys.stdout.reconfigure(encoding="utf-8")
+  - 不要走 PowerShell WriteAllText (console GBK)
+  - 用 os.walk + os.path.getsize, 不要 Get-ChildItem (PowerShell 输出编码问题)
+
+decision_id: D-MDIndex-001
+supersedes: null
+replaces:
+  - "旧 LAAP 必读 3 文件 (改为 LAAP 必读 12 文件)"
+created: 2026-07-20
+ship: 2026-07-20
+linked_rules:
+  - "RULE-MDIndex-013 (L0 必读)"
+  - "RULE-Encoding-001 (写文件 UTF-8)"
+  - "RULE-Verify-005 (写后读回验证)"
+  - "RULE-SafeRemove-012 (md 删除走备份)"
