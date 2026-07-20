@@ -1,12 +1,97 @@
-node_id: wiki_recall
-name: Wiki Recall
-level: 2
-purpose: Search the wiki for prior context matching the current task. Returns top-k relevant entries.
-inputs: ["task (str)", "wiki_root (Path)", "top_k (int)"]
-outputs: ["entries (list[WikiEntry])"]
-dependencies: ["extract_entities"]
-failure_modes: ["recall_miss", "wiki_missing"]
-agent_role: planner
-selector_keywords: ["recall", "search wiki", "检索", "查 wiki"]
-maturity: experimental
-evidence: tests/test_phase3_phase4.py
+id: wiki_recall
+name: wiki_recall
+title: "Wiki Recall — 3-Phase Pipeline"
+level: L1
+modes: [task, discuss, auto, sprint]
+roles: [worker, reviewer]
+cat: l1
+category: knowledge-recall
+description: |
+  Recall relevant llmwiki topics for a natural-language query. Three
+  phases compose into a single ranked hit list:
+
+    Phase 1 — keyword_grep
+        Tokenize the query, scan llmwiki/index.md + timeline.md +
+        by-project/*.md + topics/*.md. First-pass candidates scored
+        by fraction of query tokens found in each file.
+
+    Phase 2 — semantic_match
+        Expand query tokens with a small in-file synonym table
+        (SYNONYMS in scripts/wiki_recall.py). Direct matches weighted
+        1.0, synonym-only matches weighted 0.4.
+
+    Phase 3 — hybrid_rerank
+        final = phase1*1.0 + phase2*0.7 + project_affinity*0.5
+        (project affinity = +0.5 if the topic's file lives under
+        by-project/<project>.md and that project name appears in the
+        query). Sort by (final_score desc, mtime desc), take top-k.
+
+  Designed to be embedding-free and cron-safe: runs in a few hundred ms
+  on a small wiki (< 1k topics). Future phases (Phase 4+) may layer
+  real embeddings behind a feature flag.
+
+decision_id: D-WikiRecall-3Phase-001
+introduced_in: v1.3.0
+introduced_on: 2026-07-20
+related:
+  - scripts/wiki_recall.py
+  - scripts/wiki_ingest.py
+  - methods/recipes/build_llm_wiki.yaml
+
+inputs:
+  - name: query
+    type: string
+    required: true
+    note: "Natural-language question or topic cue."
+
+  - name: top_k
+    type: int
+    default: 5
+    note: "Max hits to return."
+
+  - name: wiki_root
+    type: path
+    default: "<repo>/llmwiki"
+    note: "Override via MINI_MP_LLMWIKI_ROOT env or --root flag."
+
+outputs:
+  - name: hits
+    type: list[TopicHit]
+    fields: [topic_id, title, path, mtime, phase1_score, phase2_score,
+             final_score, project, matched_terms]
+
+cli:
+  - "python scripts/wiki_recall.py \"query string\" --top-k 5"
+  - "python scripts/wiki_recall.py \"query string\" --json"
+  - "python scripts/wiki_recall.py \"query string\" --root /path/to/llmwiki"
+
+failure_modes:
+  - id: F-WikiRecall-001
+    name: empty_fts_index
+    when: "wiki_root has no index.md / by-project/ / topics/"
+    detection: "phase1 returns empty dict"
+    recovery: "Run `python scripts/wiki_ingest.py --source mem` first to seed."
+
+  - id: F-WikiRecall-002
+    name: token_mismatch_unicode
+    when: "Query is pure CJK with no ASCII tokens; tokenizer splits on [一-鿿]."
+    detection: "All hits have final_score < 0.1"
+    recovery: "Future Phase 4 — embeddings. For now, rephrase query with English terms."
+
+  - id: F-WikiRecall-003
+    name: stale_index_after_ingest
+    when: "ingest ran but wiki_recall reads cached index without new topics."
+    detection: "topic id from a recent session not in hits"
+    recovery: "wiki_ingest.py atomic-write guarantees on-disk state is coherent; rerun recall."
+
+success_criteria:
+  - id: S-WikiRecall-001
+    description: "top-5 hits contain a directly-relevant topic for ≥ 80% of test queries."
+  - id: S-WikiRecall-002
+    description: "End-to-end latency on a 1k-topic wiki < 500ms (no network)."
+
+lint:
+  steps:
+    - "method must declare decision_id"
+    - "modes ∩ {task, discuss, auto, sprint} ≠ ∅"
+    - "related[] must list at least the implementation file"

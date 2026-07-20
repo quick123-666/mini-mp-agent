@@ -1,5 +1,60 @@
 # Changelog
 
+## [1.3.0] - 2026-07-20
+
+**Wiki Recall 3-Phase + Two-Table Docs.** The missing recall layer for the
+Karpathy LLM wiki: a 3-phase pipeline (keyword_grep → semantic_match →
+hybrid_rerank) that lets `Worker`/`Reviewer` pull prior project context
+into a fresh session. Also ships the two-table documentation pattern
+(local `docs/DEV_PLAN.md` + public `docs/RELEASE_STATUS.md`) as a
+versioned L1 method node.
+
+> Version jump 1.1.1 → 1.3.0: v1.2.0 (originally `wiki_recall 3-phase`)
+> was never released — the method node existed as a 489-byte stub but the
+> implementation did not. v1.3.0 closes the gap.
+
+### Added
+
+- **`scripts/wiki_recall.py`** (10 KB) — embedding-free 3-phase recall:
+  - Phase 1 `keyword_grep` — tokenize query, scan `llmwiki/index.md` +
+    `timeline.md` + `by-project/*.md` + `topics/*.md`. First-pass
+    candidates scored by `matched_tokens / query_tokens`.
+  - Phase 2 `semantic_match` — small in-file synonym table
+    (`SYNONYMS` dict) re-ranks Phase 1 hits. Direct match 1.0,
+    synonym-only 0.4.
+  - Phase 3 `hybrid_rerank` — `final = phase1·1.0 + phase2·0.7 +
+    project_affinity·0.5`. Sort by `(final desc, mtime desc)`,
+    take top-k. Returns `TopicHit` dataclass with full provenance.
+  - CLI: `python scripts/wiki_recall.py "query" --top-k 5 --json`.
+  - Smoke-tested live: `laap aris self-model` → top hit
+    `2026-07-15-laap-aris` (score 3.75, 7 matched terms).
+- **`methods/recipes/wiki_recall.yaml`** (3.3 KB) — full L1 method node
+  with `inputs / outputs / cli / failure_modes / success_criteria / lint`.
+  Replaces the 489-byte stub from `D-BuildLLMWiki-001`. `decision_id:
+  D-WikiRecall-3Phase-001`.
+- **`docs/RELEASE_STATUS.md`** — public coarse table (commit + push).
+  6 columns: version, date, status, headline, commit count, test count.
+- **`docs/DEV_PLAN.md`** — local fine-grained table (`.gitignore`'d).
+  ~3× the rows of the public table.
+- **`methods/recipes/sync_dev_plan.yaml`** — L1 method node
+  implementing `M-SyncDevPlan-001`. Decision ID `D-SyncDevPlan-001`.
+
+### Changed
+
+- `VERSION.json` bumped to `1.3.0`; added `wiki_recall` +
+  `two_table_pattern` component sections; added `phase_11` to phase
+  history.
+- `README.md` badge: `v1.1.1` → `v1.3.0`, intro paragraph updated.
+
+### Out of scope (deferred to v1.4.0)
+
+- Real embedding-based recall (Phase 4 of `wiki_recall.yaml`) —
+  needs vector store + a model.
+- CJK tokenizer improvement — current regex `[一-鿿]` is naive;
+  no Jieba/character n-grams yet.
+- v1.2.0 standalone release notes — never written, intentionally
+  skipped. This CHANGELOG section shows the jump.
+
 ## [1.1.1] - 2026-07-18
 
 Post-release ship patch for v1.1.0. Closes 3 ship-completion gaps per `D-ShipCompletionDefinition-001`.

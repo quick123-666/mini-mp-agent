@@ -41,3 +41,7 @@ _cron_wiki/
 llmwiki/
 # Lock files from atomic_write.py (runtime artifacts, not source)
 *.lock
+
+# Local-only fine dev plan (M-SyncDevPlan-001 two-table pattern)
+# Public coarse lives at docs/RELEASE_STATUS.md (committed).
+docs/DEV_PLAN.md

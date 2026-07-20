@@ -1,0 +1,91 @@
+id: sync_dev_plan
+name: sync_dev_plan
+title: "Two-Table Dev/Release Docs Sync"
+level: L1
+modes: [task, sprint]
+roles: [worker]
+cat: l1
+category: docs-sync
+description: |
+  Maintain two synchronized tables documenting the project's release
+  status: a fine-grained local table (`docs/DEV_PLAN.md`, .gitignore'd)
+  and a coarse public table (`docs/RELEASE_STATUS.md`, committed).
+
+  Ratio target: coarse ≈ 30% of fine row count. The fine table carries
+  per-sub-feature rows (e.g. each phase of wiki_recall as a separate
+  row); the coarse table collapses to one row per release.
+
+  This is the canonical answer to "how do I document a multi-phase
+  release without dumping 30 internal rows on the public README?"
+  — keep the public surface clean, keep the local surface auditable.
+
+decision_id: D-SyncDevPlan-001
+introduced_in: v1.3.0
+introduced_on: 2026-07-20
+related:
+  - docs/RELEASE_STATUS.md
+  - docs/DEV_PLAN.md
+  - .gitignore
+
+inputs:
+  - name: release_version
+    type: semver
+    required: true
+    note: "e.g. v1.3.0"
+
+  - name: sub_features
+    type: list[string]
+    required: true
+    note: "Atomic sub-feature descriptions (one row each in fine table)."
+
+  - name: headline
+    type: string
+    required: true
+    note: "Public one-liner for coarse table."
+
+outputs:
+  - name: fine_table_rows
+    type: int
+    note: "Number of rows in docs/DEV_PLAN.md after this sync."
+
+  - name: coarse_table_rows
+    type: int
+    note: "Number of rows in docs/RELEASE_STATUS.md after this sync."
+
+  - name: coarse_to_fine_ratio
+    type: float
+    note: "Should be ≤ 0.33 (≈ 30%)."
+
+procedure:
+  step_1: "Update or insert the fine table row(s) in docs/DEV_PLAN.md."
+  step_2: "Update or insert the coarse table row(s) in docs/RELEASE_STATUS.md."
+  step_3: "Compute row counts; verify coarse_to_fine_ratio ≤ 0.33."
+  step_4: "Verify docs/DEV_PLAN.md is listed in .gitignore."
+  step_5: "Stage only docs/RELEASE_STATUS.md + other release artifacts. NEVER stage docs/DEV_PLAN.md."
+  step_6: "Commit + push (SSH or PAT)."
+
+failure_modes:
+  - id: F-SyncDevPlan-001
+    name: coarse_overflows_fine_ratio
+    when: "coarse_to_fine_ratio > 0.33"
+    detection: "Count rows in both tables post-edit."
+    recovery: "Collapse sub-features into one coarse row OR add more fine rows to keep ratio."
+
+  - id: F-SyncDevPlan-002
+    name: fine_table_committed
+    when: "docs/DEV_PLAN.md appears in `git status`."
+    detection: "`git status` should never show docs/DEV_PLAN.md as staged."
+    recovery: "`git rm --cached docs/DEV_PLAN.md` and verify .gitignore entry."
+
+  - id: F-SyncDevPlan-003
+    name: head_diverges
+    when: "Coarse table 'Released' section lists a version not in fine table."
+    detection: "Cross-check version strings between both files."
+    recovery: "Add the row to the fine table; this is a structural invariant."
+
+lint:
+  steps:
+    - "docs/RELEASE_STATUS.md must have '## Highlights' section"
+    - "docs/DEV_PLAN.md must have '## Sync protocol' section"
+    - ".gitignore must contain 'docs/DEV_PLAN.md' or 'docs/DEV_PLAN*'"
+    - "Both tables must agree on released versions"

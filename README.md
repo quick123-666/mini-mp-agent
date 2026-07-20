@@ -6,11 +6,12 @@
 *5 modes · 18-method work tree · 0 external dependencies · 333/333 tests PASS*
 
 [![Tests](https://github.com/quick123-666/mini-mp-agent/actions/workflows/test.yml/badge.svg)](https://github.com/quick123-666/mini-mp-agent/actions/workflows/test.yml)
-[![Release v1.1.1](https://img.shields.io/badge/release-v1.1.1-blue.svg)](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.1.1)
+[![Release v1.3.0](https://img.shields.io/badge/release-v1.3.0-blue.svg)](https://github.com/quick123-666/mini-mp-agent/releases/tag/v1.3.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Dependencies: 0](https://img.shields.io/badge/dependencies-0-success.svg)](#-philosophy)
 [![Tests 333/333](https://img.shields.io/badge/tests-333%2F333-brightgreen.svg)](#-tests)
+[![Wiki recall](https://img.shields.io/badge/wiki_recall-3--phase-blueviolet.svg)](./RELEASE_NOTES_v1.3.0.md)
 
 **Languages**: [English](./README.md) · [中文 (简体)](./README.zh-CN.md)
 
@@ -18,7 +19,9 @@
 
 </div>
 
-> **🆕 v1.1.1 — Ship patch** (2026-07-18): `.gitignore llmwiki/ + *.lock`, `_sanitize_project_slug()` cross-platform safety, real OpenClaw cron (3h) hooked. 310 → 333 tests. See [RELEASE_NOTES_v1.1.1.md](./RELEASE_NOTES_v1.1.1.md).
+> **🆕 v1.3.0 — Wiki Recall + Two-Table Docs** (2026-07-20): 3-phase recall pipeline (`wiki_recall.py` keyword_grep → semantic_match → hybrid_rerank), full L1 method node replacing the 489-byte stub, public `docs/RELEASE_STATUS.md` + local `docs/DEV_PLAN.md` two-table pattern. See [RELEASE_NOTES_v1.3.0.md](./RELEASE_NOTES_v1.3.0.md).
+>
+> **v1.1.1 — Ship patch** (2026-07-18): `.gitignore llmwiki/ + *.lock`, `_sanitize_project_slug()` cross-platform safety, real OpenClaw cron (3h) hooked. 310 → 333 tests. See [RELEASE_NOTES_v1.1.1.md](./RELEASE_NOTES_v1.1.1.md).
 >
 > **v1.1.0 — LLM Wiki redesign** (2026-07-18): 1 session = 1 topic (67x fewer files). New `scripts/wiki_ingest.py` 4-way pipeline (cron-full / mem / session / lint) + atomic state + auto index regen. See [RELEASE_NOTES_v1.1.0.md](./RELEASE_NOTES_v1.1.0.md).
 
