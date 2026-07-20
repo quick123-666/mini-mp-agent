@@ -6,10 +6,15 @@ Two-table docs (M-SyncDevPlan-001): public coarse table here
 
 | Version | Date       | Status  | Headline                                  |
 |---------|------------|---------|-------------------------------------------|
+| v1.3.1  | 2026-07-20 | shipped | CI fix: tree-level registration + parser     |
 | v1.3.0  | 2026-07-20 | shipped | Wiki recall 3-phase + two-table docs      |
 | v1.1.1  | 2026-07-18 | shipped | Ship patch: .gitignore + slug + cron      |
 | v1.1.0  | 2026-07-18 | shipped | LLM Wiki redesign (1 session = 1 topic)   |
 | v1.0.1  | 2026-07-17 | shipped | Phase 1-8: modes, PWR, atomic, wiki       |
+
+## v1.3.1
+
+- Tree-level fix: register `wiki_recall`/`sync_dev_plan` in `_index.json` + level parser hardening + test expectations.
 
 ## v1.3.0
 
