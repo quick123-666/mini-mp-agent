@@ -1,4 +1,4 @@
-﻿# Encoding Quarantine Report (2026-07-19 18:30)
+# Encoding Quarantine Report (2026-07-19 18:30)
 
 **Generated from**: `C:\Users\Administrator\.qclaw\workspace\scripts\encoding_detect.csv`
 **Total .md files scanned**: 2245

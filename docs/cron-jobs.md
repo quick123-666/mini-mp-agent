@@ -1,6 +1,6 @@
 # OpenClaw Cron Jobs (mini-mp-agent)
 
-> **最后更新**: 2026-07-20 15:01:21 (Asia/Shanghai)
+> **最后更新**: 2026-07-20 15:08:32 (Asia/Shanghai, 15:07 加状态)
 > **方法节点**: `methods/recipes/sync_cron_doc.yaml` (M-SyncCronDoc-001, 2026-07-20 14:58 立)
 > **触发**: 用户 "现在统一同步 mini-mp-agent/docs/cron-jobs.md"
 > **流程**: cron list → 渲染本文件 → 更新顶部时间戳 → 校验 job 总数 = total (5)
@@ -118,6 +118,24 @@ assert count_rows_in_overview_table() == total
 
 # 5. commit + push mini-mp-agent (走 RULE-Encoding-014)
 ```
+
+---
+
+
+
+---
+
+## 当前状态 (2026-07-20 15:07): 工作中 vs 没工作
+
+| 状态 | 数量 | 任务 |
+|---|:---:|---|
+| ✅ **工作中** | **2** | `llmwiki-ingest-daily` (last 11:00 ok), `llmwiki-deep-lint` (last 11:05 ok) |
+| 🆕 **没工作中** (未到时间) | **3** | `llmwiki-cron-full-nightly` (23:00 今晚), `llmwiki-backup-weekly` (7/26 周日), `llmwiki-compact-monthly` (8/1 月初) |
+| ❌ **没工作中** (出错) | **0** | (无失败) |
+
+**合计**: 5 个任务 = 2 ✅ + 3 🆕 + 0 ❌
+
+**持续检查**: `cron list` 拿最新 state.lastRunStatus + consecutiveErrors
 
 ---
 

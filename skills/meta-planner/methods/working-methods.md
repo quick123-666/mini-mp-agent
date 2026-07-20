@@ -1,4 +1,4 @@
-﻿# 工作方法论 v1.0.0 — Clean Baseline (Reconstructed 2026-07-19)
+# 工作方法论 v1.0.0 — Clean Baseline (Reconstructed 2026-07-19)
 
 **Reconstructed from**: MEMORY.md + 7 个 UTF8_OK 源文件（memory/2026-07-16.md / 5 meta-planner skills / 1 harness-builder）
 **Status**: 索引重建完成 (231 unique D/M-NNN ID), 详细内容分散在 `memory/`、`skills/`、`scripts/`
