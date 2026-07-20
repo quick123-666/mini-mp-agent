@@ -1,0 +1,77 @@
+name: M-SyncCronDoc-001
+title: Sync OpenClaw cron jobs to docs/cron-jobs.md
+version: 1.1.0
+author: mini-mp-agent
+created: 2026-07-20T02:30:00
+updated: 2026-07-20T14:58:00
+maturity: stable
+role: shared
+trigger:
+  - "any cron add/update/remove"
+  - "sync cron doc"
+  - "refresh cron-jobs.md"
+
+# === 触发场景 ===
+scenario: |
+  任何 OpenClaw cron add/update/remove 后, 重新渲染 mini-mp-agent/docs/cron-jobs.md.
+
+# === 6 步流程 ===
+steps:
+  - name: "1. cron list"
+    description: "调 cron 工具 action=list 拿完整状态 (含 total / jobs[])"
+    output: "{total: N, jobs: [...]}"
+
+  - name: "2. 渲染文件"
+    description: |
+      重渲染 docs/cron-jobs.md, 含 5 段:
+      - 概览表
+      - 详细 (每个任务的 schedule/payload/failure alert/state)
+      - 典型一天时间线
+      - 同步工作流说明
+      - 变更日志
+    output: docs/cron-jobs.md (UTF-8 无 BOM)
+
+  - name: "3. 更新顶部时间戳"
+    description: "更新 "最后更新" 为当前 Asia/Shanghai 时间"
+    output: line 3 改时间
+
+  - name: "4. 校验 job 总数"
+    description: "断言概览表的行数 == total 字段"
+    output: assert pass
+
+  - name: "5. commit + push (mini-mp-agent)"
+    description: |
+      走 RULE-Encoding-014:
+      - Python subprocess + git -F - + LANG=C.UTF-8
+      - 验证 commit msg UTF-8 (hex dump)
+      - git push (mini-mp-agent 是 GitHub 公开)
+    output: pushed to origin/main
+
+  - name: "6. 同步工作区"
+    description: "如果 workspace-mini-mp 也有同类快照 (如 cron_jobs_snapshot), 也更新那边"
+    output: workspace md updated
+
+# === 约束 ===
+constraints:
+  - "强制走 RULE-Encoding-014 (Python utf-8)"
+  - "cron list 必须先于 docs 渲染 (顺序不可逆)"
+  - "校验 job 总数 == total, 不通过则 abort"
+  - "commit msg 必须含中文 "cron" 字段, 字节验证"
+
+# === 关联 ===
+related_decisions:
+  - D-SyncCronDoc-001 (方法建立, 02:30 立)
+  - D-Rule-Encoding-014 (commit msg utf-8)
+
+related_rules:
+  - RULE-Encoding-014
+  - RULE-MDIndex-014 (workspace 双项目快照实时登记)
+  - M-PreUploadMDAudit-001 (上传前检查)
+
+# === 已知错误 / 反思 ===
+remediation:
+  - "2026-07-20 12:25: 02:30 那段 GBK 乱码 (PowerShell console cp936 渲染)"
+  - "2026-07-20 14:58: 本方法 MEMORY.md 描述但 yaml 文件未入库, 重新建立 (D-SyncCronDoc-001 re-ship)"
+
+decision_id: D-SyncCronDoc-001
+ship_date: 2026-07-20
