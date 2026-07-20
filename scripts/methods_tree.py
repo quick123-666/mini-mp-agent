@@ -325,12 +325,21 @@ class MethodsTree:
         if current_key and current_list is not None:
             data[current_key] = current_list
 
-        # Coerce numeric/string fields
+        # Coerce numeric/string fields. Accept both '1' and 'L1' forms.
         if "level" in data:
-            try:
-                data["level"] = int(data["level"])
-            except (ValueError, TypeError):
-                data["level"] = 0
+            raw = data["level"]
+            if isinstance(raw, str):
+                # Strip optional 'L' / 'l' prefix; fall back to 0 only if neither parses.
+                stripped = raw.strip().lstrip("Ll")
+                try:
+                    data["level"] = int(stripped)
+                except (ValueError, TypeError):
+                    data["level"] = 0
+            else:
+                try:
+                    data["level"] = int(raw)
+                except (ValueError, TypeError):
+                    data["level"] = 0
 
         return MethodNode(
             node_id=data.get("node_id", path.stem),

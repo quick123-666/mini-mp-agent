@@ -1,12 +1,12 @@
 {
   "version": 1,
   "schema": "mini-mp-agent-methods/v1",
-  "updated": "2026-07-18",
-  "total_methods": 15,
+  "updated": "2026-07-20",
+  "total_methods": 19,
   "levels": {
     "L0": {"label": "mode entry", "count": 5},
-    "L1": {"label": "high-level recipe", "count": 5},
-    "L2": {"label": "sub-step", "count": 5},
+    "L1": {"label": "high-level recipe", "count": 7},
+    "L2": {"label": "sub-step", "count": 4},
     "L3": {"label": "primitive", "count": 3}
   },
   "roles": ["planner", "worker", "reviewer", "reflector", "dispatcher", "shared"],
@@ -22,8 +22,9 @@
     {"id": "execute_task", "level": 1, "role": "worker", "maturity": "stable"},
     {"id": "review_task", "level": 1, "role": "reviewer", "maturity": "stable"},
     {"id": "reflect_task", "level": 1, "role": "reflector", "maturity": "experimental"},
+    {"id": "wiki_recall", "level": 1, "role": "planner", "maturity": "stable"},
+    {"id": "sync_dev_plan", "level": 1, "role": "worker", "maturity": "stable"},
 
-    {"id": "wiki_recall", "level": 2, "role": "planner", "maturity": "experimental"},
     {"id": "wiki_persist", "level": 2, "role": "worker", "maturity": "experimental"},
     {"id": "score_output", "level": 2, "role": "reviewer", "maturity": "stable"},
     {"id": "extract_entities", "level": 2, "role": "shared", "maturity": "stable"},
@@ -39,6 +40,7 @@
     {"from": "m_task", "to": "plan_task"},
     {"from": "m_task", "to": "execute_task"},
     {"from": "m_task", "to": "review_task"},
+    {"from": "m_task", "to": "sync_dev_plan"},
     {"from": "m_discuss", "to": "parallel_execute"},
     {"from": "m_auto", "to": "decompose_task"},
     {"from": "m_auto", "to": "plan_task"},
@@ -48,6 +50,7 @@
     {"from": "m_sprint", "to": "m_auto"},
     {"from": "m_sprint", "to": "wiki_recall"},
     {"from": "m_sprint", "to": "wiki_persist"},
+    {"from": "m_sprint", "to": "sync_dev_plan"},
 
     {"from": "plan_task", "to": "extract_entities"},
     {"from": "execute_task", "to": "parallel_execute"},
@@ -59,6 +62,7 @@
     {"from": "wiki_persist", "to": "extract_entities"},
     {"from": "wiki_persist", "to": "lint_wiki"},
     {"from": "wiki_persist", "to": "atomic_write"},
-    {"from": "lint_wiki", "to": "atomic_write"}
+    {"from": "lint_wiki", "to": "atomic_write"},
+    {"from": "sync_dev_plan", "to": "atomic_write"}
   ]
 }

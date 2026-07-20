@@ -1,7 +1,7 @@
 id: wiki_recall
 name: wiki_recall
 title: "Wiki Recall — 3-Phase Pipeline"
-level: L1
+level: 1
 modes: [task, discuss, auto, sprint]
 roles: [worker, reviewer]
 cat: l1

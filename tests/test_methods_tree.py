@@ -1,4 +1,4 @@
-"""Tests for methods_tree.py (mini-mp-agent work method tree API).
+﻿"""Tests for methods_tree.py (mini-mp-agent work method tree API).
 
 Run: python -m mini_mp_agent.tests.test_methods_tree
 """
@@ -39,9 +39,9 @@ TREE = MethodsTree()
 # 1. Loading & structure
 # ============================================================
 
-def test_tree_loads_18_nodes():
-    """Tree should load 15-18 nodes (5 L0 + 5 L1 + 5 L2 + 3 L3 = 18)."""
-    assert_eq(len(TREE), 18, "tree size")
+def test_tree_loads_19_nodes():
+    """Tree should load 19 nodes (5 L0 + 7 L1 + 4 L2 + 3 L3 = 19)."""
+    assert_eq(len(TREE), 19, "tree size")
 
 
 def test_all_levels_present():
@@ -70,8 +70,8 @@ def test_L0_modes_exist():
 
 
 def test_L1_pwr_recipes_exist():
-    """5 L1 recipes match PWR phases."""
-    expected = {"decompose_task", "plan_task", "execute_task", "review_task", "reflect_task"}
+    """7 L1 recipes: 5 PWR phases + wiki_recall + sync_dev_plan."""
+    expected = {"decompose_task", "plan_task", "execute_task", "review_task", "reflect_task", "wiki_recall", "sync_dev_plan"}
     actual = {n.node_id for n in TREE if n.level == 1}
     assert_eq(actual, expected, "L1 recipes")
 
@@ -175,7 +175,7 @@ def test_get_children_m_auto_depth_1():
 
 
 def test_get_children_m_sprint_includes_m_auto():
-    """m_sprint children should include m_auto (via L0→L0 edge)."""
+    """m_sprint children should include m_auto (via L0鈫扡0 edge)."""
     children = TREE.get_children("m_sprint", depth=2)
     ids = {c.node_id for c in children}
     assert_in("m_auto", ids, "m_sprint -> m_auto")
@@ -248,8 +248,8 @@ def test_validate_passes():
     """Tree validates cleanly."""
     report = TREE.validate()
     assert_true(report["valid"], f"validate: {report['errors']}")
-    assert_eq(report["stats"]["total_nodes"], 18, "node count")
-    assert_true(report["stats"]["total_edges"] >= 20, "edge count")
+    assert_eq(report["stats"]["total_nodes"], 19, "node count")
+    assert_true(report["stats"]["total_edges"] >= 25, "edge count")
 
 
 def test_validate_stats_levels():
@@ -257,8 +257,8 @@ def test_validate_stats_levels():
     report = TREE.validate()
     by_level = report["stats"]["by_level"]
     assert_eq(by_level[0], 5, "L0 count")
-    assert_eq(by_level[1], 5, "L1 count")
-    assert_eq(by_level[2], 5, "L2 count")
+    assert_eq(by_level[1], 7, "L1 count")
+    assert_eq(by_level[2], 4, "L2 count")
     assert_eq(by_level[3], 3, "L3 count")
 
 
@@ -307,9 +307,9 @@ def test_mode_router_lookup():
     """Each detected mode should have a corresponding method tree node."""
     from scripts.mode_router import detect_mode
     test_cases = [
-        ("对比 mp 和 mini-mp", "discuss"),
-        ("做一个 hello world", "task"),
-        ("什么是 PWR", "qa"),
+        ("瀵规瘮 mp 鍜?mini-mp", "discuss"),
+        ("鍋氫竴涓?hello world", "task"),
+        ("浠€涔堟槸 PWR", "qa"),
     ]
     for query, expected_mode in test_cases:
         decision = detect_mode(query)
@@ -335,7 +335,7 @@ def test_custom_root_loads():
 # ============================================================
 
 TESTS = [
-    test_tree_loads_18_nodes,
+    test_tree_loads_19_nodes,
     test_all_levels_present,
     test_all_roles_present,
     test_L0_modes_exist,
