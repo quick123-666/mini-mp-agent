@@ -12,6 +12,9 @@ htmlcov/
 .tox/
 
 # Editor / OS
+
+# Local backup dirs (M-SafeRemove-001, never commit)
+_archive/
 .DS_Store
 .vscode/
 .idea/
