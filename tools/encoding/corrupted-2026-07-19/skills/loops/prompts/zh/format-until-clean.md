@@ -1,4 +1,4 @@
-﻿---
+---
 name: "format-until-clean"
 description: "鏍煎紡鍖栧伐鍏烽浂鏀瑰姩杩愯閫氳繃"
 ---

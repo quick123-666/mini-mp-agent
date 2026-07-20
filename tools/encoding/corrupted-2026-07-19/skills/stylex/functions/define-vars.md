@@ -1,4 +1,4 @@
-﻿# define-vars
+# define-vars
 
 **Tags:** stylex, defineVars, tokens, css-variables, theme-vars
 **When to use:** 瀹氫箟涓€缁勮法缁勪欢澶嶇敤鐨勮璁′护鐗?棰滆壊 / 闂磋窛 / 瀛楀彿 / 鍦嗚)銆?

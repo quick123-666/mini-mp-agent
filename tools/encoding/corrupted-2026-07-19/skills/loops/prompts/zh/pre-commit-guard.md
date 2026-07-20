@@ -1,4 +1,4 @@
-﻿---
+---
 name: "pre-commit-guard"
 description: "娴嬭瘯澶辫触鏃堕樆姝it鎻愪氦"
 ---

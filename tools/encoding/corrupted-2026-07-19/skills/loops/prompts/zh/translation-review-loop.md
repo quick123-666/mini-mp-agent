@@ -1,4 +1,4 @@
-﻿---
+---
 name: "translation-review-loop"
 description: "缈昏瘧鍑嗙‘銆佽嚜鐒躲€佺鍚堣澧?
 ---

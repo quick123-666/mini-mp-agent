@@ -1,4 +1,4 @@
-﻿---
+---
 name: "type-definition-sync"
 description: "绫诲瀷涓庤繍琛屾椂鍙婃暟鎹簱涓€鑷?
 ---

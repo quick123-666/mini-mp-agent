@@ -1,4 +1,4 @@
-﻿---
+---
 name: "deploy-verification-loop"
 description: "閮ㄧ讲鍚庡仴搴蜂笌鍐掔儫绔偣鍏ㄩ儴鎴愬姛"
 ---

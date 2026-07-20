@@ -1,4 +1,4 @@
-﻿# Source MEMORY.md (2026-07-15)
+# Source MEMORY.md (2026-07-15)
 
 ```
 ## 2026-07-15 02:30锛欴-127.B ship (route_to_team() CLI 鍙傛暟 BUG 淇)

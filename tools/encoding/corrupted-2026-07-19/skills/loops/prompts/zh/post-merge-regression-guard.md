@@ -1,4 +1,4 @@
-﻿---
+---
 name: "post-merge-regression-guard"
 description: "姣忔鍚堝苟鎴杛ebase鍚庡啋鐑熸祴璇曠珛鍗抽€氳繃"
 ---

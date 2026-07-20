@@ -1,4 +1,4 @@
-﻿# Source MEMORY.md (2026-07-13)
+# Source MEMORY.md (2026-07-13)
 
 ```
 ## 2026-07-13 14:03:P2 L2 Accept signal + 鏈湴 Naive Trader ship (D-110)

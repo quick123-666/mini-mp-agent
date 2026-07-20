@@ -1,4 +1,4 @@
-﻿---
+---
 name: "schema-migration-loop"
 description: "Schema 鍙樻洿宸茶縼绉讳笖娴嬭瘯閫氳繃"
 ---
