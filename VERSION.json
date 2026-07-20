@@ -12,7 +12,7 @@
     "agents": ["planner", "worker", "reviewer", "reflector"],
     "loop": "PWR (Plan-Work-Review) with optional Reflect + early-stop",
     "method_tree": {
-      "methods": 18,
+      "methods": 19,
       "levels": "L0-L3",
       "api": ["search", "get", "get_children", "find_path"],
       "schema_fields": 8,

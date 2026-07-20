@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.1] - 2026-07-20 (patch)
+
+**CI tree-level fix.** The `wiki_recall` and `sync_dev_plan` recipes
+shipped in v1.3.0 were not registered in `methods/_index.json`, which
+broke `test_validate_stats_levels` (`expected L0=5, got 6` because
+`L1` strings were not parsed and fell back to `0`). This patch:
+
+- registers `wiki_recall` (L1) and `sync_dev_plan` (L1) in
+  `methods/_index.json` with edges to `m_task` / `m_sprint`
+- hardens `methods_tree.py` parser to accept `L0`/`L1`/`L2`/`L3`
+  letter-prefixed level values, not just `0`/`1`/`2`/`3`
+- updates test expectations: tree size 18 → 19, L1 count 5 → 7,
+  L2 count 5 → 4 (the original L2 count was off-by-one — only 4 L2
+  yaml recipes exist)
+- corrects `VERSION.json` `method_tree.methods` 18 → 19
+
+No runtime behavior change; CI now goes green on
+`Run stdlib test runners`.
+
 ## [1.3.0] - 2026-07-20
 
 **Wiki Recall 3-Phase + Two-Table Docs.** The missing recall layer for the
